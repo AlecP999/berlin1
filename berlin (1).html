@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Berlin — 1987</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0d0c0a;
+    color: #e8e0d0;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .grain {
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+    background-size: 256px;
+    pointer-events: none;
+    touch-action: none;
+    z-index: 999;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: -20px;
+    background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Berlin_Skyline_Fernsehturm_02.jpg/1280px-Berlin_Skyline_Fernsehturm_02.jpg') center/cover no-repeat;
+    filter: grayscale(0.85) contrast(1.1) brightness(0.3) sepia(0.3) blur(2px);
+    transform: scale(1.08);
+    animation: slowZoom 30s ease-in-out infinite alternate;
+  }
+
+  @keyframes slowZoom {
+    0% { transform: scale(1.05); }
+    100% { transform: scale(1.12); }
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(13,12,10,0.5) 0%, rgba(13,12,10,0.2) 40%, rgba(13,12,10,0.6) 100%),
+      radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(13,12,10,0.7) 100%);
+    z-index: 1;
+  }
+
+  .rain-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  .glass-fog {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background:
+      radial-gradient(ellipse 120% 80% at 50% 50%, transparent 20%, rgba(13,12,10,0.15) 60%, rgba(13,12,10,0.4) 100%);
+    backdrop-filter: blur(1.5px);
+    -webkit-backdrop-filter: blur(1.5px);
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 5;
+    text-align: center;
+  }
+
+  .hero-eyebrow {
+    font-size: clamp(0.65rem, 1vw, 0.85rem);
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: rgba(232,224,208,0.35);
+    margin-bottom: 0.8rem;
+    font-weight: 300;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.4s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(5rem, 14vw, 13rem);
+    letter-spacing: 0.06em;
+    line-height: 0.85;
+    color: #e8e0d0;
+    text-shadow: 0 0 80px rgba(180,140,60,0.15), 0 2px 30px rgba(0,0,0,0.5);
+    opacity: 0;
+    animation: titleReveal 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+  }
+
+  .hero-year {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.2rem, 2.5vw, 2rem);
+    letter-spacing: 0.3em;
+    color: rgba(232,224,208,0.25);
+    margin-top: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.7s forwards;
+  }
+
+  .hero-line {
+    width: 40px;
+    height: 1px;
+    background: rgba(232,224,208,0.2);
+    margin: 1.5rem auto 0;
+    opacity: 0;
+    animation: fadeUp 1s ease 0.9s forwards;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 1s ease 1.2s forwards;
+  }
+
+  .scroll-hint span {
+    font-size: 0.6rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: rgba(232,224,208,0.3);
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(180deg, rgba(232,224,208,0.3), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(1.3); }
+  }
+
+  /* ── CARDS SECTION ── */
+  .explore-section {
+    position: relative;
+    padding: 6rem 2rem 8rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.5em;
+    text-transform: uppercase;
+    color: rgba(232,224,208,0.3);
+    margin-bottom: 3rem;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    gap: 2rem;
+  }
+
+  .card {
+    position: relative;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    aspect-ratio: 4/3;
+    background: #161412;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0;
+  }
+
+  .card.visible { animation: cardIn 0.8s ease forwards; }
+  .card:nth-child(2).visible { animation-delay: 0.15s; }
+
+  .card:hover { transform: translateY(-6px); }
+
+  .card-img {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    filter: grayscale(0.7) contrast(1.05) brightness(0.55) sepia(0.2);
+    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .card:hover .card-img {
+    filter: grayscale(0.4) contrast(1.1) brightness(0.65) sepia(0.15);
+    transform: scale(1.05);
+  }
+
+  .card-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 30%, rgba(13,12,10,0.85) 100%);
+    z-index: 1;
+  }
+
+  .card-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2rem;
+    z-index: 2;
+  }
+
+  .card-tag {
+    font-size: 0.55rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: rgba(232,224,208,0.4);
+    margin-bottom: 0.5rem;
+  }
+
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: #e8e0d0;
+  }
+
+  .card-desc {
+    font-size: 0.8rem;
+    color: rgba(232,224,208,0.45);
+    margin-top: 0.5rem;
+    font-weight: 300;
+    line-height: 1.5;
+    max-width: 320px;
+  }
+
+  .card-arrow {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 2;
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(232,224,208,0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s ease;
+  }
+
+  .card:hover .card-arrow {
+    border-color: rgba(232,224,208,0.4);
+    background: rgba(232,224,208,0.05);
+  }
+
+  .card-arrow svg {
+    width: 14px;
+    height: 14px;
+    stroke: rgba(232,224,208,0.4);
+    transition: all 0.4s ease;
+  }
+
+  .card:hover .card-arrow svg {
+    stroke: rgba(232,224,208,0.7);
+    transform: translate(1px, -1px);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(232,224,208,0);
+    border-radius: 4px;
+    z-index: 3;
+    pointer-events: none;
+    transition: border-color 0.5s ease;
+  }
+
+  .card:hover::before { border-color: rgba(232,224,208,0.08); }
+
+  /* ── MOBILE FIX ── */
+  @media (max-width: 768px) {
+    .hero { height: 80vh; min-height: 400px; }
+    .explore-section { padding: 4rem 1.2rem 6rem; }
+    .cards { grid-template-columns: 1fr; gap: 1.5rem; }
+    .card { aspect-ratio: 16/10; }
+    .card-content { padding: 1.5rem; }
+    .section-label { margin-bottom: 2rem; }
+  }
+
+  /* ── STAGE / TIMELINE PAGE ── */
+  .stage-page-inner {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 6rem;
+  }
+
+  .stage-nav {
+    margin-bottom: 4rem;
+  }
+
+  .stage-heading {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    letter-spacing: 0.04em;
+    line-height: 0.9;
+    margin-top: 2rem;
+    opacity: 0;
+    animation: titleReveal 1s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+  }
+
+  .stage-sub {
+    font-size: 0.85rem;
+    color: rgba(232,224,208,0.35);
+    font-weight: 300;
+    margin-top: 0.6rem;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.3s forwards;
+  }
+
+  /* Timeline */
+  .timeline {
+    position: relative;
+    padding-left: 2.5rem;
+  }
+
+  .timeline-line {
+    position: absolute;
+    left: 6px;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(180deg, rgba(232,224,208,0.15), rgba(232,224,208,0.05));
+  }
+
+  .timeline-item {
+    position: relative;
+    margin-bottom: 3rem;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .timeline-item.tl-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .timeline-dot {
+    position: absolute;
+    left: -2.5rem;
+    top: 0.3rem;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #c8a04a;
+    box-shadow: 0 0 12px rgba(200,160,74,0.3);
+  }
+
+  .dot-soviet {
+    background: #b03a2e;
+    box-shadow: 0 0 12px rgba(176,58,46,0.3);
+  }
+
+  .dot-empty {
+    background: transparent;
+    border: 1px solid rgba(232,224,208,0.2);
+    box-shadow: none;
+  }
+
+  .timeline-date {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .tl-day {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.05em;
+    color: #c8a04a;
+  }
+
+  .tl-year {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: rgba(232,224,208,0.3);
+  }
+
+  /* Timeline Card */
+  .timeline-card {
+    background: rgba(232,224,208,0.03);
+    border: 1px solid rgba(232,224,208,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .tl-card-img {
+    width: 100%;
+    height: 220px;
+    background-size: cover;
+    background-position: center;
+    filter: grayscale(0.7) contrast(1.05) brightness(0.5) sepia(0.2);
+  }
+
+  .tl-card-body {
+    padding: 1.8rem;
+  }
+
+  .tl-card-tag {
+    font-size: 0.55rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: rgba(232,224,208,0.3);
+    margin-bottom: 0.6rem;
+  }
+
+  .tl-card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    letter-spacing: 0.03em;
+    line-height: 1.1;
+    color: #e8e0d0;
+  }
+
+  .tl-card-speaker {
+    font-size: 0.8rem;
+    color: #c8a04a;
+    margin-top: 0.3rem;
+    font-weight: 400;
+  }
+
+  .tl-card-text {
+    font-size: 0.82rem;
+    line-height: 1.7;
+    color: rgba(232,224,208,0.5);
+    font-weight: 300;
+    margin-top: 1rem;
+  }
+
+  .tl-card-quote {
+    margin-top: 1.2rem;
+    padding: 1rem 1.2rem;
+    background: rgba(200,160,74,0.05);
+    border-left: 2px solid rgba(200,160,74,0.3);
+    font-size: 0.85rem;
+    font-style: italic;
+    color: rgba(232,224,208,0.6);
+    line-height: 1.5;
+    position: relative;
+  }
+
+  .quote-mark {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    color: rgba(200,160,74,0.3);
+    font-style: normal;
+    line-height: 1;
+    margin-right: 0.2rem;
+    vertical-align: -0.15em;
+  }
+
+  /* Empty add card */
+  .card-empty {
+    background: transparent;
+    border: 1px dashed rgba(232,224,208,0.08);
+  }
+
+  .card-empty-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem;
+    gap: 0.7rem;
+  }
+
+  .card-empty-inner span {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(232,224,208,0.2);
+  }
+
+  .timeline-add {
+    animation-delay: 0.7s;
+  }
+
+  @media (max-width: 768px) {
+    .stage-page-inner { padding: 2rem 1rem 5rem; }
+    .timeline { padding-left: 2rem; }
+    .timeline-dot { left: -2rem; }
+    .timeline-line { left: 6px; }
+    .tl-card-img { height: 160px; }
+    .tl-card-body { padding: 1.3rem; }
+  }
+
+  /* ── VIDEO MODAL ── */
+  .video-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0,0,0,0.95);
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+  }
+  .video-modal.open { display: flex; }
+
+  .vm-inner {
+    width: 100%;
+    max-width: 1200px;
+    max-height: 95vh;
+    display: flex;
+    gap: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #111;
+    position: relative;
+  }
+
+  .vm-video {
+    flex: 1.4;
+    min-width: 0;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .vm-video iframe {
+    width: 100%;
+    flex: 1;
+    min-height: 300px;
+    border: none;
+  }
+
+  .vm-transcript {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem 1.8rem;
+    background: #0d0c0a;
+    border-left: 1px solid rgba(232,224,208,0.06);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .vm-transcript::-webkit-scrollbar { width: 3px; }
+  .vm-transcript::-webkit-scrollbar-track { background: transparent; }
+  .vm-transcript::-webkit-scrollbar-thumb { background: rgba(232,224,208,0.15); border-radius: 2px; }
+
+  .vm-transcript h4 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.3rem;
+    color: #e8e0d0;
+  }
+
+  .vm-transcript .vm-speaker {
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: rgba(232,224,208,0.3);
+    margin-bottom: 1.5rem;
+  }
+
+  .vm-transcript .vm-text {
+    font-size: 0.82rem;
+    line-height: 1.85;
+    color: rgba(232,224,208,0.55);
+    font-weight: 300;
+    white-space: pre-wrap;
+  }
+
+  .vm-close {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    z-index: 10;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(232,224,208,0.15);
+    background: rgba(0,0,0,0.6);
+    color: rgba(232,224,208,0.6);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+  .vm-close:hover { border-color: rgba(232,224,208,0.4); color: #e8e0d0; }
+
+  /* Watch button on cards */
+  .tl-watch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.2rem;
+    padding: 0.55rem 1.2rem;
+    border: 1px solid rgba(232,224,208,0.12);
+    border-radius: 2px;
+    background: rgba(232,224,208,0.03);
+    color: rgba(232,224,208,0.5);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .tl-watch-btn:hover {
+    border-color: rgba(200,160,74,0.4);
+    color: #c8a04a;
+    background: rgba(200,160,74,0.05);
+  }
+  .tl-watch-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+  }
+
+  @media (max-width: 768px) {
+    .vm-inner { flex-direction: column; max-height: 95vh; }
+    .vm-video { flex: none; }
+    .vm-video iframe { min-height: 220px; }
+    .vm-transcript { flex: 1; min-height: 0; padding: 1.2rem; }
+    .vm-close { top: 0.5rem; right: 0.5rem; }
+  }
+
+  /* ── HOME BUTTON ── */
+  .home-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: rgba(232,224,208,0.4);
+    background: none;
+    border: 1px solid rgba(232,224,208,0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 2px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+
+  .home-btn:hover {
+    color: rgba(232,224,208,0.8);
+    border-color: rgba(232,224,208,0.25);
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes titleReveal {
+    0% { opacity: 0; transform: translateY(30px); filter: blur(8px); }
+    100% { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+
+  @keyframes fadeUp {
+    0% { opacity: 0; transform: translateY(16px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes cardIn {
+    0% { opacity: 0; transform: translateY(40px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SUBPAGES ── */
+  .page {
+    display: none;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .page.active { display: block; }
+
+  .page.page-centered {
+    display: none;
+    min-height: 100vh;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .page.page-centered.active { display: flex; }
+
+  .page-centered h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 8vw, 6rem);
+    letter-spacing: 0.05em;
+    animation: titleReveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .page-centered p {
+    color: rgba(232,224,208,0.4);
+    font-weight: 300;
+    max-width: 400px;
+    text-align: center;
+    line-height: 1.6;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.2s forwards;
+  }
+
+  .back-btn {
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: rgba(232,224,208,0.4);
+    background: none;
+    border: 1px solid rgba(232,224,208,0.15);
+    padding: 0.7rem 1.8rem;
+    border-radius: 2px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.3s ease;
+    opacity: 0;
+    animation: fadeUp 0.8s ease 0.4s forwards;
+  }
+
+  .back-btn:hover {
+    color: rgba(232,224,208,0.8);
+    border-color: rgba(232,224,208,0.3);
+  }
+
+  .home-view.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+
+<!-- HOME -->
+<div class="home-view" id="homeView">
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    <canvas id="rainCanvas" class="rain-canvas"></canvas>
+    <div class="glass-fog"></div>
+    <div class="hero-content">
+      <div class="hero-eyebrow">A divided city</div>
+      <h1 class="hero-title">BERLIN</h1>
+      <div class="hero-year">1961 — 1989</div>
+      <div class="hero-line"></div>
+    </div>
+    <div class="scroll-hint">
+      <span>Explore</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <section class="explore-section">
+    <div class="section-label">Choose a destination</div>
+    <div class="cards">
+      <div class="card" onclick="navigateTo('stage')">
+        <div class="card-img" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Reaganberlinwall.jpg/1280px-Reaganberlinwall.jpg');"></div>
+        <div class="card-overlay"></div>
+        <div class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+        </div>
+        <div class="card-content">
+          <div class="card-tag">Politics &amp; Rhetoric</div>
+          <div class="card-title">The Stage</div>
+          <div class="card-desc">Where leaders addressed a divided world.</div>
+        </div>
+      </div>
+
+      <a class="card" href="wall.html" style="text-decoration:none;color:inherit;">
+        <div class="card-img" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Berlinermauer.jpg/1280px-Berlinermauer.jpg');"></div>
+        <div class="card-overlay"></div>
+        <div class="card-arrow">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+        </div>
+        <div class="card-content">
+          <div class="card-tag">History &amp; Division</div>
+          <div class="card-title">The Wall</div>
+          <div class="card-desc">The barrier that split a city, a nation, and the world.</div>
+        </div>
+      </a>
+    </div>
+  </section>
+</div>
+
+<!-- STAGE PAGE — SPEECH TIMELINE -->
+<div class="page" id="stagePage">
+  <div class="stage-page-inner">
+    <nav class="stage-nav">
+      <a class="home-btn" href="berlin.html">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Home
+      </a>
+      <h2 class="stage-heading">The Stage</h2>
+      <p class="stage-sub">Speeches that echoed across the divide</p>
+    </nav>
+
+    <div class="timeline">
+      <div class="timeline-line"></div>
+
+      <!-- 1: General Clay — June 1948 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">
+          <span class="tl-day">June 24</span>
+          <span class="tl-year">1948</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">U.S. Military Headquarters, Berlin</div>
+            <h3 class="tl-card-title">"I am ready to try an airlift"</h3>
+            <div class="tl-card-speaker">General Lucius D. Clay — U.S. Military Governor of Germany</div>
+            <p class="tl-card-text">
+              When Stalin sealed off all land routes to West Berlin, the Western allies faced an impossible choice: abandon the city, force a convoy through Soviet lines and risk World War III, or attempt something never done before — supply an entire city by air. General Clay chose the airlift, but warned it would only work if Berliners could endure the hunger and cold. They could. Over 250,000 flights delivered 2.3 million tons of supplies across eleven months.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              If the people of Berlin won't stand that, it will fail.
+            </div>
+            <button class="tl-watch-btn" onclick="openSpeech('reuter1948')"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>Watch Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2: Ernst Reuter — September 1948 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">
+          <span class="tl-day">September 9</span>
+          <span class="tl-year">1948</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">Platz der Republik, West Berlin</div>
+            <h3 class="tl-card-title">"People of the world — look upon this city!"</h3>
+            <div class="tl-card-speaker">Ernst Reuter — Mayor of West Berlin</div>
+            <p class="tl-card-text">
+              With the Soviet blockade strangling his city, Mayor Reuter stood before nearly 300,000 Berliners and issued one of the most desperate pleas of the Cold War. He called upon the nations of the world not to abandon Berlin — a city of rubble and ruins that had become, almost overnight, the front line of freedom. His words helped galvanise international support and steeled the resolve of the Western allies to continue the airlift.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              You cannot, you must not, abandon this city and its people.
+            </div>
+            <button class="tl-watch-btn" onclick="openSpeech('reuter1948')"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>Watch Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3: Stalin's Blockade collapses — May 1949 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot dot-soviet"></div>
+        <div class="timeline-date">
+          <span class="tl-day">May 12</span>
+          <span class="tl-year">1949</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">Moscow</div>
+            <h3 class="tl-card-title">Stalin lifts the Berlin Blockade</h3>
+            <div class="tl-card-speaker">Joseph Stalin — Soviet Premier</div>
+            <p class="tl-card-text">
+              After eleven months of failed siege, Stalin quietly conceded. The Western counter-blockade had crippled East Germany's economy, and the airlift had proven the West's resolve. At 12:01 AM, the first Allied train in nearly a year rolled into Berlin. The blockade had backfired spectacularly — pushing the Western allies to form NATO and accelerating the creation of West Germany. Berlin's first great crisis was over. It would not be the last.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4: Khrushchev Ultimatum — November 1958 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot dot-soviet"></div>
+        <div class="timeline-date">
+          <span class="tl-day">November 10</span>
+          <span class="tl-year">1958</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">Soviet-Polish Meeting, Moscow</div>
+            <h3 class="tl-card-title">The Berlin Ultimatum</h3>
+            <div class="tl-card-speaker">Nikita Khrushchev — Soviet Premier</div>
+            <p class="tl-card-text">
+              Calling West Berlin a "malignant tumor," Khrushchev demanded the United States, Britain, and France withdraw their forces within six months. If they refused, the Soviet Union would hand control of all access routes to East Germany. The ultimatum sparked a three-year crisis — and ironically accelerated the very exodus of East Germans it sought to prevent. By the time it was over, 2.5 million had fled west.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              West Berlin is a malignant tumor that must be removed.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5: Ulbricht — June 1961 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot dot-soviet"></div>
+        <div class="timeline-date">
+          <span class="tl-day">June 15</span>
+          <span class="tl-year">1961</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">Press Conference, East Berlin</div>
+            <h3 class="tl-card-title">"Nobody has the intention of building a wall"</h3>
+            <div class="tl-card-speaker">Walter Ulbricht — Head of State, East Germany</div>
+            <p class="tl-card-text">
+              In a stunning moment of political theatre, the East German leader denied any plans to build a wall — in response to a question that hadn't even mentioned one. No journalist had suggested the idea. Ulbricht claimed his workers were too busy building houses. The denial was so specific that it effectively confirmed what was coming. Two months later, on August 13, the barbed wire went up overnight.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              Our builders are engaged in residential construction, and their labour is deployed for that.
+            </div>
+            <button class="tl-watch-btn" onclick="openSpeech('ulbricht1961')"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>Watch Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6: Kennedy TV Address — July 1961 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">
+          <span class="tl-day">July 25</span>
+          <span class="tl-year">1961</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">Nationwide Television Address, Washington D.C.</div>
+            <h3 class="tl-card-title">"Berlin is the great testing place of Western courage"</h3>
+            <div class="tl-card-speaker">John F. Kennedy — President of the United States</div>
+            <p class="tl-card-text">
+              After a bruising summit with Khrushchev in Vienna — where the Soviet leader renewed his ultimatum — Kennedy went on national television to draw a line. He activated 150,000 military reservists and increased defence spending. The message to Moscow was clear: the West would not be pushed out of Berlin. Nineteen days later, East Germany began building the Wall.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              We cannot and will not permit the Communists to drive us out of Berlin.
+            </div>
+            <button class="tl-watch-btn" onclick="openSpeech('kennedy1961')"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>Watch Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7: Willy Brandt — August 1961 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">
+          <span class="tl-day">August 16</span>
+          <span class="tl-year">1961</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">Schöneberg Town Hall, West Berlin</div>
+            <h3 class="tl-card-title">"Don't shoot at your fellow countrymen!"</h3>
+            <div class="tl-card-speaker">Willy Brandt — Governing Mayor of West Berlin</div>
+            <p class="tl-card-text">
+              Three days after the barbed wire went up, West Berlin's mayor addressed a furious and frightened city. Brandt pleaded with East German border guards not to fire on their own people, and raged at the Western allies for their inaction. His anger toward the Americans — and a blistering letter he sent to Kennedy — strained relations but also helped push Washington toward a stronger commitment to Berlin. Brandt would later become Chancellor and architect of Ostpolitik.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              Berlin expects more than words. Berlin expects political action.
+            </div>
+            <button class="tl-watch-btn" onclick="openSpeech('brandt1961')"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>Watch Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8: JFK Ich bin ein Berliner — June 1963 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">
+          <span class="tl-day">June 26</span>
+          <span class="tl-year">1963</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">Rathaus Schöneberg, West Berlin</div>
+            <h3 class="tl-card-title">"Ich bin ein Berliner"</h3>
+            <div class="tl-card-speaker">John F. Kennedy — President of the United States</div>
+            <p class="tl-card-text">
+              Before 120,000 West Berliners, Kennedy delivered the Cold War's most iconic address. Twenty-two months after the Wall went up, he declared solidarity with the divided city. His words drew a line from ancient Rome to modern Berlin — proclaiming that in the free world, the proudest boast was to call oneself a citizen of this besieged city. The crowd erupted, chanting his name. Kennedy himself was shaken by the emotion — later admitting the experience had gotten away from him.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              All free men, wherever they may live, are citizens of Berlin.
+            </div>
+            <button class="tl-watch-btn" onclick="openSpeech('jfk1963')"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>Watch Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9: Brandt — Ostpolitik 1969 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">
+          <span class="tl-day">October 28</span>
+          <span class="tl-year">1969</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">German Bundestag, Bonn</div>
+            <h3 class="tl-card-title">"Two states in Germany — not foreign countries to each other"</h3>
+            <div class="tl-card-speaker">Willy Brandt — Chancellor of West Germany</div>
+            <p class="tl-card-text">
+              Now Chancellor, Brandt launched Ostpolitik — a radical policy of engagement with the East. He acknowledged the existence of two German states while insisting they shared a special bond. The approach was deeply controversial in the West but eventually led to treaties with the Soviet Union and Poland, and earned Brandt the Nobel Peace Prize. His philosophy of "change through rapprochement" planted seeds that would bear fruit two decades later.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              I will not be the Chancellor of a conquered Germany, but of a liberated one.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 10: Reagan 1982 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">
+          <span class="tl-day">June 11</span>
+          <span class="tl-year">1982</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">West Berlin</div>
+            <h3 class="tl-card-title">"Why is the Wall there?"</h3>
+            <div class="tl-card-speaker">Ronald Reagan — President of the United States</div>
+            <p class="tl-card-text">
+              On his first visit to Berlin as president, Reagan posed a simple, devastating question to the Soviet leadership. It was a rhetorical preview of what was to come five years later. Amidst massive anti-American protests in the city, Reagan quietly laid the groundwork for his most famous challenge — the one the State Department would fight to remove from his next Berlin speech.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              I'd like to ask the Soviet leaders one question: why is the Wall there?
+            </div>
+            <button class="tl-watch-btn" onclick="openSpeech('reagan1982')"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>Watch Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 11: Reagan — Tear Down This Wall 1987 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot"></div>
+        <div class="timeline-date">
+          <span class="tl-day">June 12</span>
+          <span class="tl-year">1987</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">Brandenburg Gate, West Berlin</div>
+            <h3 class="tl-card-title">"Mr. Gorbachev, tear down this wall!"</h3>
+            <div class="tl-card-speaker">Ronald Reagan — President of the United States</div>
+            <p class="tl-card-text">
+              Speaking behind bulletproof glass, a hundred yards from the Wall, Reagan issued the most famous challenge of the Cold War. His own advisers — the State Department, the National Security Council, even Chief of Staff Howard Baker — fought to remove the line. Reagan insisted it stay. The Soviet press called it "war-mongering." The media largely ignored it. Two years later, the Wall fell, and the speech was recast as prophetic.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              This wall will fall. For it cannot withstand faith; it cannot withstand truth.
+            </div>
+            <button class="tl-watch-btn" onclick="openSpeech('reagan1987')"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>Watch Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 12: Honecker — January 1989 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot dot-soviet"></div>
+        <div class="timeline-date">
+          <span class="tl-day">January 19</span>
+          <span class="tl-year">1989</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">East Berlin</div>
+            <h3 class="tl-card-title">"The Wall will stand for 50, even 100 years"</h3>
+            <div class="tl-card-speaker">Erich Honecker — Head of State, East Germany</div>
+            <p class="tl-card-text">
+              Months before his regime collapsed, the ageing East German leader made this astonishingly wrong prediction to a Western journalist. Honecker dismissed calls for reform, rejected Gorbachev's suggestions for change, and insisted there was nothing to restructure. He was forced to resign in October. The Wall fell three weeks later.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              We have nothing to restructure.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 13: Gorbachev in East Berlin — October 1989 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot dot-soviet"></div>
+        <div class="timeline-date">
+          <span class="tl-day">October 7</span>
+          <span class="tl-year">1989</span>
+        </div>
+        <div class="timeline-card">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">East Berlin — 40th Anniversary of the GDR</div>
+            <h3 class="tl-card-title">"Those who are late will be punished by life itself"</h3>
+            <div class="tl-card-speaker">Mikhail Gorbachev — General Secretary, Soviet Union</div>
+            <p class="tl-card-text">
+              Visiting East Berlin for East Germany's 40th anniversary, Gorbachev delivered a thinly veiled warning to the hardline regime. His words — widely interpreted as a rebuke of Honecker's refusal to reform — electrified the opposition movement. The Soviet Union would not intervene to prop up the regime. Honecker was gone within eleven days. The Wall, within a month.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              Dangers await only those who do not react to life.
+            </div>
+            <button class="tl-watch-btn" onclick="openSpeech('gorbachev1989')"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>Watch Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 14: Schabowski — November 9 1989 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot dot-soviet" style="background:#c8a04a; box-shadow: 0 0 16px rgba(200,160,74,0.5);"></div>
+        <div class="timeline-date">
+          <span class="tl-day">November 9</span>
+          <span class="tl-year">1989</span>
+        </div>
+        <div class="timeline-card" style="border-color: rgba(200,160,74,0.15);">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">International Press Centre, East Berlin</div>
+            <h3 class="tl-card-title">"Immediately, without delay"</h3>
+            <div class="tl-card-speaker">Günter Schabowski — GDR Government Spokesman</div>
+            <p class="tl-card-text">
+              The most consequential accident in modern history. Schabowski, hastily appointed and poorly briefed, was asked when new travel regulations would take effect. The answer was supposed to be "tomorrow, with a visa process." Instead, fumbling through his notes, he mumbled that it was effective "immediately, without delay." West German television broadcast the words live. Within hours, thousands of East Berliners flooded the checkpoints. The guards, overwhelmed and without orders, opened the gates. The Wall fell — not with a battle, but a bureaucratic error.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              Das trifft nach meiner Kenntnis... ist das sofort, unverzüglich.
+            </div>
+            <button class="tl-watch-btn" onclick="openSpeech('schabowski1989')"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>Watch Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 15: Willy Brandt — November 10 1989 -->
+      <div class="timeline-item tl-anim">
+        <div class="timeline-dot" style="background:#c8a04a; box-shadow: 0 0 16px rgba(200,160,74,0.5);"></div>
+        <div class="timeline-date">
+          <span class="tl-day">November 10</span>
+          <span class="tl-year">1989</span>
+        </div>
+        <div class="timeline-card" style="border-color: rgba(200,160,74,0.15);">
+          <div class="tl-card-body">
+            <div class="tl-card-tag">Schöneberg Town Hall, West Berlin</div>
+            <h3 class="tl-card-title">"Now what belongs together will grow together"</h3>
+            <div class="tl-card-speaker">Willy Brandt — Former Chancellor of West Germany</div>
+            <p class="tl-card-text">
+              The morning after the Wall opened, the 75-year-old Brandt flew to Berlin. Deeply moved, he stood before the same town hall where Kennedy had spoken 26 years earlier, and where he himself had raged at the Wall's construction in 1961. His words — simple, profound, and trembling with emotion — captured what an entire nation felt. The man who had fought the Wall from its first day lived to see its last.
+            </p>
+            <div class="tl-card-quote">
+              <span class="quote-mark">"</span>
+              Now we are in a situation in which what belongs together will grow together.
+            </div>
+            <button class="tl-watch-btn" onclick="openSpeech('brandt1989')"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg>Watch Speech</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- End marker -->
+      <div class="timeline-item timeline-add tl-anim">
+        <div class="timeline-dot dot-empty"></div>
+        <div class="timeline-card card-empty">
+          <div class="card-empty-inner">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(232,224,208,0.25)" stroke-width="1.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            <span>More speeches to come</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+  // ══════════════════════════════════════════════════════
+  // RAIN ON GLASS — realistic water droplets sitting on glass
+  // ══════════════════════════════════════════════════════
+  (function() {
+    const canvas = document.getElementById('rainCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let W, H, dpr;
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = canvas.parentElement.clientWidth;
+      H = canvas.parentElement.clientHeight;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      canvas.style.width = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // ── STATIC TINY DROPS (condensation) ──
+    const tiny = [];
+    for (let i = 0; i < 500; i++) {
+      tiny.push({
+        x: Math.random() * 2000,
+        y: Math.random() * 1400,
+        r: 0.3 + Math.random() * 0.8,
+        o: 0.06 + Math.random() * 0.15
+      });
+    }
+
+    // ── SITTING DROPS — water beads on the glass ──
+    const sitting = [];
+    const MAX_SITTING = 120;
+
+    function spawnSitting() {
+      return {
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: 1.5 + Math.random() * 4,
+        targetR: 0,
+        vy: 0,
+        opacity: 0,
+        targetOpacity: 0.25 + Math.random() * 0.4,
+        age: 0,
+        maxAge: 600 + Math.random() * 1200,
+        settled: true,
+        dripping: false,
+        dripTrail: [],
+        wobblePhase: Math.random() * Math.PI * 2,
+        squish: 0.75 + Math.random() * 0.15 // wider than tall
+      };
+    }
+
+    for (let i = 0; i < MAX_SITTING; i++) {
+      let d = spawnSitting();
+      d.age = Math.random() * d.maxAge * 0.5;
+      d.opacity = d.targetOpacity;
+      d.targetR = d.r;
+      sitting.push(d);
+    }
+
+    // ── DRIP CLASS — big drop rolling down the glass ──
+    const drips = [];
+    const MAX_DRIPS = 5;
+
+    function spawnDrip(x, y, r) {
+      return {
+        x: x,
+        y: y,
+        r: r || (3 + Math.random() * 3),
+        vy: 0.3 + Math.random() * 0.5,
+        vx: (Math.random() - 0.5) * 0.3,
+        opacity: 0.4 + Math.random() * 0.2,
+        trail: [],
+        life: 0,
+        maxLife: 300 + Math.random() * 400,
+        wobbleAmp: 0.15 + Math.random() * 0.3,
+        wobbleFreq: 0.03 + Math.random() * 0.02,
+        accel: 0.003 + Math.random() * 0.005,
+        paused: false,
+        pauseTimer: 0,
+        squish: 0.7
+      };
+    }
+
+    // ── DRAW A SINGLE WATER DROP ──
+    function drawDrop(x, y, r, opacity, squish) {
+      if (r < 0.3 || opacity < 0.01) return;
+      ctx.save();
+      
+      let rx = r;
+      let ry = r * (squish || 0.8);
+      
+      // main drop body — elliptical, wider than tall
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+      
+      // refraction gradient — this is what makes it look like water
+      let g = ctx.createRadialGradient(
+        x - rx * 0.3, y - ry * 0.35, rx * 0.05,
+        x + rx * 0.1, y + ry * 0.1, rx * 1.1
+      );
+      g.addColorStop(0, `rgba(220, 230, 240, ${opacity * 0.9})`);
+      g.addColorStop(0.3, `rgba(170, 190, 210, ${opacity * 0.5})`);
+      g.addColorStop(0.6, `rgba(120, 145, 170, ${opacity * 0.25})`);
+      g.addColorStop(1, `rgba(80, 100, 130, ${opacity * 0.08})`);
+      ctx.fillStyle = g;
+      ctx.fill();
+      
+      // shadow underneath — makes it sit on the glass
+      ctx.beginPath();
+      ctx.ellipse(x + 0.5, y + ry * 0.3, rx * 0.8, ry * 0.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.12})`;
+      ctx.fill();
+      
+      // bright highlight — top-left specular reflection
+      ctx.beginPath();
+      ctx.ellipse(x - rx * 0.28, y - ry * 0.3, rx * 0.35, ry * 0.2, -0.3, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.7})`;
+      ctx.fill();
+      
+      // secondary smaller highlight
+      if (r > 2) {
+        ctx.beginPath();
+        ctx.ellipse(x - rx * 0.1, y - ry * 0.15, rx * 0.12, ry * 0.08, 0.2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity * 0.35})`;
+        ctx.fill();
+      }
+      
+      // edge ring — refraction rim
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(200, 215, 230, ${opacity * 0.15})`;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+      
+      ctx.restore();
+    }
+
+    // ── DRAW DRIP TRAIL — wet smear left behind ──
+    function drawTrail(trail) {
+      if (trail.length < 2) return;
+      for (let i = 1; i < trail.length; i++) {
+        let t = i / trail.length;
+        let p = trail[i];
+        let fade = t * 0.12 * (1 - (trail.length - i) / trail.length * 0.5);
+        ctx.beginPath();
+        ctx.ellipse(p.x, p.y, p.r * 0.7 * t, p.r * 0.3 * t, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(170, 190, 210, ${fade})`;
+        ctx.fill();
+      }
+    }
+
+    // ── MAIN LOOP ──
+    let frame = 0;
+    function animate() {
+      ctx.clearRect(0, 0, W, H);
+      frame++;
+
+      // draw tiny condensation
+      for (let c of tiny) {
+        if (c.x > W || c.y > H) continue;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(190, 205, 220, ${c.o})`;
+        ctx.fill();
+        // tiny highlight
+        ctx.beginPath();
+        ctx.arc(c.x - c.r * 0.2, c.y - c.r * 0.2, c.r * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${c.o * 0.5})`;
+        ctx.fill();
+      }
+
+      // update & draw sitting drops
+      for (let d of sitting) {
+        d.age++;
+        // fade in
+        if (d.age < 60) d.opacity += (d.targetOpacity - d.opacity) * 0.05;
+        // grow slowly (water collecting)
+        if (d.r < d.targetR) d.r += 0.01;
+        // fade out near end of life
+        if (d.age > d.maxAge - 100) d.opacity *= 0.98;
+        
+        // chance to start dripping if big enough
+        if (d.r > 3.5 && Math.random() < 0.0003 && drips.length < MAX_DRIPS) {
+          drips.push(spawnDrip(d.x, d.y, d.r * 0.9));
+          d.r *= 0.4;
+          d.targetR = d.r;
+          d.opacity *= 0.5;
+        }
+        
+        // respawn if dead
+        if (d.age > d.maxAge) {
+          Object.assign(d, spawnSitting());
+        }
+        
+        drawDrop(d.x, d.y, d.r, d.opacity, d.squish);
+      }
+
+      // spawn new sitting drop occasionally
+      if (frame % 20 === 0 && sitting.length < MAX_SITTING) {
+        let nd = spawnSitting();
+        nd.y = Math.random() * H * 0.3; // more at the top
+        sitting.push(nd);
+      }
+
+      // update & draw drips
+      for (let i = drips.length - 1; i >= 0; i--) {
+        let d = drips[i];
+        d.life++;
+        
+        // random pausing — drops stop and go
+        if (!d.paused && Math.random() < 0.008) {
+          d.paused = true;
+          d.pauseTimer = 30 + Math.random() * 80;
+        }
+        if (d.paused) {
+          d.pauseTimer--;
+          if (d.pauseTimer <= 0) d.paused = false;
+        }
+        
+        if (!d.paused) {
+          d.vy += d.accel;
+          d.vy = Math.min(d.vy, 3);
+          d.y += d.vy;
+          d.x += Math.sin(d.life * d.wobbleFreq) * d.wobbleAmp + d.vx;
+          
+          // leave trail
+          if (d.life % 2 === 0) {
+            d.trail.push({ x: d.x, y: d.y, r: d.r });
+            if (d.trail.length > 80) d.trail.shift();
+          }
+          
+          // absorb nearby sitting drops
+          for (let s of sitting) {
+            let dx = d.x - s.x, dy = d.y - s.y;
+            let dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < d.r + s.r + 2) {
+              d.r = Math.min(d.r + s.r * 0.2, 8);
+              d.vy += 0.05;
+              s.r *= 0.3;
+              s.opacity *= 0.3;
+              s.age = s.maxAge - 10;
+            }
+          }
+        }
+        
+        // fade at bottom or end of life
+        if (d.y > H - 50) d.opacity *= 0.96;
+        if (d.life > d.maxLife) d.opacity *= 0.95;
+        
+        drawTrail(d.trail);
+        drawDrop(d.x, d.y, d.r, d.opacity, 0.65);
+        
+        if (d.opacity < 0.02 || d.y > H + 20) {
+          drips.splice(i, 1);
+        }
+      }
+
+      // occasionally spawn a drip from the top
+      if (frame % 180 === 0 && drips.length < MAX_DRIPS) {
+        drips.push(spawnDrip(
+          50 + Math.random() * (W - 100),
+          -5,
+          3 + Math.random() * 3
+        ));
+      }
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+  })();
+  // Scroll-triggered card reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.card').forEach(c => observer.observe(c));
+
+  // Timeline scroll reveal
+  const tlObserver = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('tl-visible'), i * 100);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  function observeTimeline() {
+    document.querySelectorAll('.tl-anim').forEach(el => tlObserver.observe(el));
+  }
+
+  function navigateTo(page) {
+    document.getElementById('homeView').classList.add('hidden');
+    document.getElementById(page + 'Page').classList.add('active');
+    window.scrollTo({ top: 0 });
+    if (page === 'stage') setTimeout(observeTimeline, 100);
+  }
+
+  // ── SPEECH VIDEO DATA ──
+  const speeches = {
+    reuter1948: {
+      title: '"People of the world — look upon this city!"',
+      speaker: 'Ernst Reuter — September 9, 1948',
+      video: '',
+      fallback: 'https://www.berlin.de/en/history/8481767-8619314-ernst-reuters-speech-to-the-reichstag-9-.en.html',
+      transcript: `Ihr Völker der Welt, ihr Völker in Amerika, in England, in Frankreich, in Italien! Schaut auf diese Stadt und erkennt, daß ihr diese Stadt und dieses Volk nicht preisgeben dürft und nicht preisgeben könnt!\n\nPeople of the world, people in America, in England, in France, in Italy! Look upon this city and recognise that you must not, you cannot, abandon this city and its people!\n\nThere has been built here, in this city, a bulwark, an outpost of freedom — and we will defend it, we must defend it. The people of Berlin have spoken. We have done our duty and we will keep on doing our duty.\n\nThe people of Berlin call upon the world. People of the world — look upon this city!`
+    },
+    jfk1963: {
+      title: '"Ich bin ein Berliner"',
+      speaker: 'John F. Kennedy — June 26, 1963',
+      video: 'https://archive.org/embed/jfks19630626',
+      transcript: `I am proud to come to this city as the guest of your distinguished Mayor, who has symbolized throughout the world the fighting spirit of West Berlin. And I am proud to visit the Federal Republic with your distinguished Chancellor who for so many years has committed Germany to democracy and freedom and progress, and to come here in the company of my fellow American, General Clay, who has been in this city during its great moments of crisis and will come again if ever needed.\n\nTwo thousand years ago the proudest boast was "civis Romanus sum." Today, in the world of freedom, the proudest boast is "Ich bin ein Berliner."\n\nI appreciate my interpreter translating my German!\n\nThere are many people in the world who really don't understand, or say they don't, what is the great issue between the free world and the Communist world. Let them come to Berlin.\n\nThere are some who say that communism is the wave of the future. Let them come to Berlin.\n\nAnd there are some who say in Europe and elsewhere we can work with the Communists. Let them come to Berlin.\n\nAnd there are even a few who say that it is true that communism is an evil system, but it permits us to make economic progress. Lass' sie nach Berlin kommen. Let them come to Berlin.\n\nFreedom has many difficulties and democracy is not perfect, but we have never had to put a wall up to keep our people in, to prevent them from leaving us.\n\nI want to say, on behalf of my countrymen, who live many miles away on the other side of the Atlantic, who are far distant from you, that they take the greatest pride that they have been able to share with you, even from a distance, the story of the last 18 years.\n\nI know of no town, no city, that has been besieged for 18 years that still lives with the vitality and the force, and the hope and the determination of the city of West Berlin.\n\nWhile the wall is the most obvious and vivid demonstration of the failures of the Communist system, for all the world to see, we take no satisfaction in it, for it is, as your Mayor has said, an offense not only against history but an offense against humanity, separating families, dividing husbands and wives and brothers and sisters, and dividing a people who wish to be joined together.\n\nWhat is true of this city is true of Germany — real, lasting peace in Europe can never be assured as long as one German out of four is denied the elementary right of free men, and that is to make a free choice.\n\nIn 18 years of peace and good faith, this generation of Germans has earned the right to be free, including the right to unite their families and their nation in lasting peace, with good will to all people.\n\nYou live in a defended island of freedom, but your life is part of the main.\n\nSo let me ask you, as I close, to lift your eyes beyond the dangers of today, to the hopes of tomorrow, beyond the freedom merely of this city of Berlin, or your country of Germany, to the advance of freedom everywhere, beyond the wall to the day of peace with justice, beyond yourselves and ourselves to all mankind.\n\nFreedom is indivisible, and when one man is enslaved, all are not free.\n\nWhen all are free, then we can look forward to that day when this city will be joined as one and this country and this great Continent of Europe in a peaceful and hopeful globe.\n\nWhen that day finally comes, as it will, the people of West Berlin can take sober satisfaction in the fact that they were in the front lines for almost two decades.\n\nAll free men, wherever they may live, are citizens of Berlin, and, therefore, as a free man, I take pride in the words "Ich bin ein Berliner."`
+    },
+    reagan1987: {
+      title: '"Mr. Gorbachev, tear down this wall!"',
+      speaker: 'Ronald Reagan — June 12, 1987',
+      video: 'https://archive.org/embed/ReagansSpeechAtTheBerlinWall',
+      transcript: `Chancellor Kohl, Governing Mayor Diepgen, ladies and gentlemen:\n\nTwenty-four years ago, President John F. Kennedy visited Berlin, speaking to the people of this city and the world at the City Hall. Well, since then two other presidents have come, each in his turn, to Berlin. And today I, myself, make my second visit to your city.\n\nWe come to Berlin, we American presidents, because it's our duty to speak, in this place, of freedom. But I must confess, we're drawn here by other things as well: by the feeling of history in this city, more than 500 years older than our own nation; by the beauty of the Grunewald and the Tiergarten; most of all, by your courage and determination.\n\nPerhaps the composer Paul Lincke understood something about American presidents. You see, like so many presidents before me, I come here today because wherever I go, whatever I do: Ich hab noch einen Koffer in Berlin. [I still have a suitcase in Berlin.]\n\nOur gathering today is being broadcast throughout Western Europe and North America. I understand that it is being seen and heard as well in the East.\n\nTo those listening throughout Eastern Europe, a special word: Although I cannot be with you, I address my remarks to you just as surely as to those standing here before me. For I join you, as I join your fellow countrymen in the West, in this firm, this unalterable belief: Es gibt nur ein Berlin. [There is only one Berlin.]\n\nBehind me stands a wall that encircles the free sectors of this city, part of a vast system of barriers that divides the entire continent of Europe. From the Baltic, south, those barriers cut across Germany in a gash of barbed wire, concrete, dog runs, and guard towers.\n\nFarther south, there may be no visible, no obvious wall. But there remain armed guards and checkpoints all the same — still a restriction on the right to travel, still an instrument to impose upon ordinary men and women the will of a totalitarian state.\n\nYet it is here in Berlin where the wall emerges most clearly; here, cutting across your city, where the news photo and the television screen have imprinted this brutal division of a continent upon the mind of the world. Standing before the Brandenburg Gate, every man is a German, separated from his fellow men. Every man is a Berliner, forced to look upon a scar.\n\nPresident von Weizsäcker has said, "The German question is open as long as the Brandenburg Gate is closed."\n\nToday I say: As long as the gate is closed, as long as this scar of a wall is permitted to stand, it is not the German question alone that remains open, but the question of freedom for all mankind.\n\nYet I do not come here to lament. For I find in Berlin a message of hope, even in the shadow of this wall, a message of triumph.\n\nIn the 1950s, Khrushchev predicted: "We will bury you." But in the West today, we see a free world that has achieved a level of prosperity and well-being unprecedented in all human history.\n\nIn the Communist world, we see failure, technological backwardness, declining standards of health, even want of the most basic kind — too little food. Even today, the Soviet Union still cannot feed itself.\n\nAfter these four decades, then, there stands before the entire world one great and inescapable conclusion: Freedom leads to prosperity. Freedom replaces the ancient hatreds among the nations with comity and peace. Freedom is the victor.\n\nAnd now the Soviets themselves may, in a limited way, be coming to understand the importance of freedom. We hear much from Moscow about a new policy of reform and openness.\n\nSome political prisoners have been released. Certain foreign news broadcasts are no longer being jammed. Some economic enterprises have been permitted to operate with greater freedom from state control.\n\nAre these the beginnings of profound changes in the Soviet state? Or are they token gestures, intended to raise false hopes in the West, or to strengthen the Soviet system without changing it?\n\nWe welcome change and openness; for we believe that freedom and security go together, that the advance of human liberty can only strengthen the cause of world peace.\n\nThere is one sign the Soviets can make that would be unmistakable, that would advance dramatically the cause of freedom and peace.\n\nGeneral Secretary Gorbachev, if you seek peace, if you seek prosperity for the Soviet Union and Eastern Europe, if you seek liberalization: Come here to this gate!\n\nMr. Gorbachev, open this gate!\n\nMr. Gorbachev, tear down this wall!\n\nAs I looked out a moment ago from the Reichstag, that embodiment of German unity, I noticed words crudely spray-painted upon the wall, perhaps by a young Berliner: "This wall will fall. Beliefs become reality."\n\nYes, across Europe, this wall will fall. For it cannot withstand faith; it cannot withstand truth. The wall cannot withstand freedom.`
+    },
+    schabowski1989: {
+      title: '"Immediately, without delay"',
+      speaker: 'Günter Schabowski — November 9, 1989',
+      video: 'https://archive.org/embed/TheFallOfTheBerlinWall1989',
+      transcript: `[Press conference — East Berlin, November 9, 1989]\n\nSchabowski reads from a prepared statement about new travel regulations for GDR citizens, appearing uncertain and poorly briefed throughout.\n\nA journalist asks: "When does this take effect?"\n\nSchabowski shuffles through his papers, visibly confused...\n\n"Das trifft nach meiner Kenntnis... ist das sofort, unverzüglich."\n\n"That comes into effect, according to my information... immediately, without delay."\n\nThe room erupts. West German television broadcasts the statement live. Within hours, thousands of East Berliners flood to the border crossings. The guards, receiving no orders to stop them, eventually open the gates.\n\nThe Berlin Wall falls — not by decree, but by mistake.`
+    },
+    ulbricht1961: {
+      title: '"Nobody has the intention of building a wall"',
+      speaker: 'Walter Ulbricht — June 15, 1961',
+      video: '',
+      transcript: `[International press conference — East Berlin, June 15, 1961]\n\nJournalist Annamarie Doherr of the Frankfurter Rundschau asks about plans for the border, though she does not specifically mention a wall.\n\nUlbricht responds:\n\n"Ich verstehe Ihre Frage so, daß es Menschen in Westdeutschland gibt, die wünschen, daß wir die Bauarbeiter der Hauptstadt der DDR mobilisieren, um eine Mauer aufzurichten, ja?"\n\n"I understand your question as suggesting that there are people in West Germany who wish us to mobilise the construction workers of the capital of the GDR to build a wall — is that so?"\n\n"Mir ist nicht bekannt, daß eine solche Absicht besteht, da sich die Bauarbeiter in der Hauptstadt hauptsächlich mit Wohnungsbau beschäftigen und ihre Arbeitskraft dafür voll eingesetzt wird. Niemand hat die Absicht, eine Mauer zu errichten."\n\n"I am not aware of any such plans. The construction workers of our capital are mainly occupied with building homes, and their labour is fully employed for that purpose. Nobody has the intention of building a wall."\n\nTwo months later, on August 13, 1961, the barbed wire went up overnight.`
+    },
+    kennedy1961: {
+      title: '"Berlin is the great testing place of Western courage"',
+      speaker: 'John F. Kennedy — July 25, 1961',
+      video: '',
+      transcript: `[Nationwide television address — July 25, 1961]\n\nGood evening. Seven weeks ago tonight I returned from Europe to report on my meeting with Premier Khrushchev and the others. His grim warnings about the future of the world, his aide-memoire on Berlin, his subsequent speeches and threats which he and his agents have launched, and the increase in the Soviet military budget that he has announced have all prompted a series of decisions by the administration.\n\nWest Berlin — lying exposed 110 miles inside East Germany, surrounded by Soviet troops and close to Soviet supply lines — has many roles. It is more than a showcase of liberty, a symbol, an island of freedom in a Communist sea. It is even more than a link with the Free World, a beacon of hope behind the Iron Curtain, an escape hatch for refugees.\n\nWest Berlin is all of that. But above all it has now become — as never before — the great testing place of Western courage and will, a focal point where our solemn commitments stretching back over the years since 1945, and Soviet ambitions now meet in basic confrontation.\n\nWe cannot and will not permit the Communists to drive us out of Berlin, either gradually or by force. For the fulfillment of our pledge to that city is essential to the morale and security of Western Germany, to the unity of Western Europe, and to the faith of the entire Free World.\n\nI hear it said that West Berlin is militarily untenable. And so was Bastogne. And so, in fact, was Stalingrad. Any dangerous spot is tenable if men — brave men — will make it so.\n\nWe do not want to fight — but we have fought before. And others in earlier times have made the same dangerous mistake of assuming that the West was too selfish and too soft and too divided to resist invasions of freedom in other lands.`
+    },
+    brandt1961: {
+      title: '"Berlin expects more than words"',
+      speaker: 'Willy Brandt — August 16, 1961',
+      video: '',
+      transcript: `[Speech at Schöneberg Town Hall — August 16, 1961]\n\nThree days after the border was sealed, Governing Mayor Willy Brandt addressed a crowd of thousands gathered outside the town hall.\n\nBrandt spoke of the outrage felt by all Berliners at the sudden division of their city. He appealed to the East German border guards:\n\n"Schießt nicht auf eure Landsleute!" — "Above all, don't shoot at your fellow countrymen!"\n\nHe expressed deep frustration at the Western allies' slow response, insisting that Berlin expected concrete political action, not merely expressions of concern.\n\n"Berlin erwartet mehr als Worte. Berlin erwartet politisches Handeln!"\n\n"Berlin expects more than words. Berlin expects political action!"\n\nBrandt also sent a blistering letter to President Kennedy, warning that inaction risked demoralising the city and undermining the West's credibility. The letter caused tension between the two leaders — but also helped push Washington toward a firmer commitment to West Berlin's defence.`
+    },
+    brandt1989: {
+      title: '"Now what belongs together will grow together"',
+      speaker: 'Willy Brandt — November 10, 1989',
+      video: '',
+      transcript: `[Rally at Schöneberg Town Hall — November 10, 1989]\n\nThe morning after the Wall opened, Willy Brandt — now 75 years old — flew to Berlin.\n\nDeeply moved, he arrived at the same town hall where Kennedy had spoken 26 years earlier, and where he himself had raged against the Wall's construction in 1961.\n\nIn an interview before the rally, Brandt said:\n\n"Jetzt wächst zusammen, was zusammengehört."\n\n"Now what belongs together will grow together."\n\nAt the rally, attended also by Chancellor Helmut Kohl and Foreign Minister Hans-Dietrich Genscher, Brandt called for free elections in the GDR.\n\nHis voice trembling with emotion, Brandt made clear that his famous words applied not only to Germany but to all of Europe — a continent that had been divided for too long.\n\nThe man who had fought the Wall from its first day had lived to see its last.`
+    },
+    reagan1982: {
+      title: '"Why is the Wall there?"',
+      speaker: 'Ronald Reagan — June 11, 1982',
+      video: '',
+      transcript: `[Address in West Berlin — June 11, 1982]\n\nOn his first visit to Berlin as president, Reagan posed a simple but devastating question to the Soviet leadership.\n\n"I'd like to ask the Soviet leaders one question — I'd like to ask them: why is the Wall there?"\n\nThe visit occurred against a backdrop of massive anti-American protests in the city. Reagan addressed them directly:\n\n"I wonder if those who demonstrate against us ever ask themselves if they should have the kind of government they apparently seek, no one would ever be able to do what they're doing again."\n\nThe speech was a rhetorical preview of what would come five years later at the Brandenburg Gate — the most famous challenge of the Cold War.`
+    },
+    gorbachev1989: {
+      title: '"Those who are late will be punished by life"',
+      speaker: 'Mikhail Gorbachev — October 7, 1989',
+      video: '',
+      transcript: `[40th Anniversary of the GDR — East Berlin, October 7, 1989]\n\nGorbachev arrived in East Berlin for ceremonies marking the German Democratic Republic's 40th anniversary. Crowds chanted "Gorby! Gorby!" and "Help us!"\n\nThe Soviet leader delivered a thinly veiled warning to the hardline East German regime:\n\n"Gefahren warten nur auf jene, die nicht auf das Leben reagieren."\n\n"Dangers await only those who do not react to life."\n\nThis was widely interpreted and later translated into the more famous formulation: "Those who are late will be punished by life itself."\n\nThe message was unmistakable: the Soviet Union would not intervene to prop up the regime. Reform was no longer optional.\n\nErich Honecker was forced to resign eleven days later. The Wall fell within a month.`
+    }
+  };
+
+  function openSpeech(key) {
+    const s = speeches[key];
+    if (!s) return;
+    document.getElementById('vmTitle').textContent = s.title;
+    document.getElementById('vmSpeaker').textContent = s.speaker;
+    document.getElementById('vmText').textContent = s.transcript;
+    const iframe = document.getElementById('vmIframe');
+    const fb = document.getElementById('vmFallback');
+    const vidWrap = document.querySelector('.vm-video');
+    if (s.video) {
+      iframe.src = s.video;
+      iframe.style.display = '';
+      vidWrap.style.display = '';
+      if (fb) { fb.style.display = 'none'; }
+    } else {
+      // No embeddable video — hide iframe, expand transcript
+      iframe.src = '';
+      iframe.style.display = 'none';
+      vidWrap.style.display = 'none';
+    }
+    document.getElementById('videoModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSpeech() {
+    document.getElementById('videoModal').classList.remove('open');
+    document.getElementById('vmIframe').src = '';
+    document.body.style.overflow = '';
+  }
+
+  // Close on Escape
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSpeech(); });
+
+  function goHome() {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('homeView').classList.remove('hidden');
+    window.scrollTo({ top: 0 });
+  }
+</script>
+
+<!-- VIDEO MODAL -->
+<div class="video-modal" id="videoModal" onclick="if(event.target===this)closeSpeech()">
+  <div class="vm-inner">
+    <button class="vm-close" onclick="closeSpeech()">✕</button>
+    <div class="vm-video">
+      <iframe id="vmIframe" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+      <div id="vmFallback" style="display:none;text-align:center;padding:8px;font-size:11px;letter-spacing:1px;color:rgba(232,224,208,0.35)"></div>
+    </div>
+    <div class="vm-transcript">
+      <h4 id="vmTitle"></h4>
+      <div class="vm-speaker" id="vmSpeaker"></div>
+      <div class="vm-text" id="vmText"></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

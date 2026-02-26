@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escape The Wall — Berlin 1987</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a08;overflow:hidden;font-family:'Courier New',monospace;color:#e8e0d0}
+canvas{display:block}
+#ui{position:fixed;inset:0;z-index:10;pointer-events:none}
+#hud{position:absolute;top:0;left:0;right:0;padding:16px 28px;display:none;justify-content:space-between;align-items:flex-start}
+.hl,.hr{display:flex;flex-direction:column;gap:4px}
+.lab{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:rgba(200,160,74,0.45)}
+.hbo{width:180px;height:5px;background:rgba(255,255,255,0.05);border:1px solid rgba(200,160,74,0.15)}
+.hbi{height:100%;background:linear-gradient(90deg,#c8a04a,#8b6914);transition:width 0.3s}
+.hbi.low{background:linear-gradient(90deg,#cc3333,#881111)}
+#tmr{font-size:20px;letter-spacing:5px;color:rgba(232,224,208,0.45);text-align:right;font-variant-numeric:tabular-nums}
+#dst{font-size:9px;letter-spacing:2px;color:rgba(232,224,208,0.2);text-align:right}
+#dmg{position:fixed;inset:0;z-index:8;background:radial-gradient(ellipse,transparent 30%,rgba(180,0,0,0.5) 100%);opacity:0;pointer-events:none;transition:opacity 0.08s}
+#start{position:fixed;inset:0;z-index:100;background:#0a0a08;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px}
+#start h1{font-size:clamp(2rem,6vw,4.2rem);letter-spacing:0.18em;text-shadow:0 0 80px rgba(200,160,74,0.08)}
+#start .sub{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(232,224,208,0.22);max-width:500px;line-height:2.1}
+#start .ctrl{font-size:9px;letter-spacing:2px;color:rgba(232,224,208,0.13);line-height:2.3;margin-top:8px}
+#start .ctrl span{color:rgba(200,160,74,0.35)}
+#sbtn{margin-top:20px;padding:14px 50px;font-family:inherit;font-size:10px;letter-spacing:7px;text-transform:uppercase;color:#e8e0d0;background:none;border:1px solid rgba(200,160,74,0.2);cursor:pointer;transition:all 0.3s;pointer-events:auto}
+#sbtn:hover{background:rgba(200,160,74,0.06);border-color:rgba(200,160,74,0.45)}
+#end{position:fixed;inset:0;z-index:100;display:none;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px}
+#end.show{display:flex}
+#end.win{background:rgba(8,14,6,0.95)}
+#end.lose{background:rgba(18,4,4,0.95)}
+#end h1{font-size:clamp(1.8rem,5vw,3.5rem);letter-spacing:0.12em}
+#end.win h1{color:#c8a04a}
+#end.lose h1{color:#aa2222}
+#end .st{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(232,224,208,0.28);line-height:2.3}
+#end .st strong{color:rgba(232,224,208,0.55);font-weight:normal}
+.eb{margin-top:8px;padding:11px 40px;font-family:inherit;font-size:9px;letter-spacing:5px;text-transform:uppercase;color:#e8e0d0;background:none;border:1px solid rgba(232,224,208,0.1);cursor:pointer;transition:all 0.3s;text-decoration:none;display:inline-block;pointer-events:auto}
+.eb:hover{border-color:rgba(232,224,208,0.3)}
+</style>
+</head>
+<body>
+<div id="start">
+  <h1>ESCAPE THE WALL</h1>
+  <div class="sub">East Berlin, 1987. You start in the streets of East Berlin. Climb the border fence, sprint across 160 meters of death strip under fire, then climb the western fence to freedom. Guards open fire the moment you enter the strip.</div>
+  <div class="ctrl">
+    <span>A/D</span> or <span>←/→</span> move &nbsp;&nbsp; <span>W/↑/SPACE</span> jump · hold near fence to climb &nbsp;&nbsp; <span>SHIFT</span> sprint &nbsp;&nbsp; <span>S/↓</span> crouch
+  </div>
+  <button id="sbtn">BEGIN ESCAPE</button>
+</div>
+<div id="ui">
+<div id="hud"><div class="hl"><div class="lab">Health</div><div class="hbo"><div class="hbi" id="hbar"></div></div></div><div class="hr"><div id="tmr">00:00</div><div id="dst">160m to freedom</div></div></div>
+</div>
+<div id="dmg"></div>
+<div id="end"><h1 id="et"></h1><div class="st" id="es"></div><button class="eb" onclick="location.reload()">TRY AGAIN</button></div>
+<canvas id="gc"></canvas>
+<script>
+// ════════════════════════════════════════════════════════════
+//  BERLIN WALL ESCAPE — Side-scroll action
+// ════════════════════════════════════════════════════════════
+const C=document.getElementById('gc'),X=C.getContext('2d');
+let W,H;
+function resize(){W=innerWidth;H=innerHeight;C.width=W;C.height=H}
+resize(); addEventListener('resize',resize);
+
+const STRIP=160, GY_PCT=0.7;
+let state='menu',hp=250,MHP=250,time=0,keys={},camX=0,lastDmgT=0,lastT=0;
+
+const P={x:-15,y:0,vx:0,vy:0,w:0.7,h:1.8,onG:true,crouch:false,climbing:false,climbT:0};
+let walls=[],wires=[],trenches=[],guards=[],towers=[],bullets=[],particles=[],fences=[];
+
+addEventListener('keydown',e=>{keys[e.code]=true;e.preventDefault()});
+addEventListener('keyup',e=>{keys[e.code]=false});
+
+function build(){
+  walls=[];wires=[];trenches=[];guards=[];towers=[];bullets=[];particles=[];fences=[];
+
+  // Fences (climbable) — east fence at x=0, west fence at x=STRIP
+  // These are chain-link/metal fences with barbed wire on top, ~3.6m tall
+  fences.push({x:0,h:3.6,t:'east'});
+  fences.push({x:STRIP,h:3.6,t:'west'});
+
+  // Barbed wire rows inside the strip
+  [25,58,95,130].forEach(wx=>{
+    wires.push({x:wx,gapY:0.8+Math.random()*1.0,gapH:1.1+Math.random()*0.3});
+  });
+  [40,105].forEach(tx=>trenches.push({x:tx,w:4}));
+  [[14,9],[52,9],[90,9],[128,9],[148,9]].forEach(([tx,th])=>{
+    towers.push({x:tx,h:th});
+    guards.push({x:tx,y:th+1.5,type:'tower',cd:Math.random()*0.5+0.5,fr:0.55+Math.random()*0.3});
+  });
+  [[20,0],[55,0],[90,0],[135,0]].forEach(([gx])=>{
+    guards.push({x:gx,y:0,type:'ground',cd:Math.random()*0.5+0.5,fr:0.6+Math.random()*0.3,bx:gx,dir:1,range:7,spd:1.2+Math.random()*0.6});
+  });
+  for(let i=0;i<28;i++){
+    const dx=8+Math.random()*(STRIP-16),ds=0.4+Math.random()*0.9,dh=0.25+Math.random()*0.5;
+    walls.push({x:dx,y:0,w:ds,h:dh,t:'debris'});
+  }
+  towers.forEach(t=>{
+    walls.push({x:t.x-2.2,y:0,w:1.8,h:0.7,t:'sandbag'});
+    walls.push({x:t.x+1.2,y:0,w:1.8,h:0.7,t:'sandbag'});
+  });
+
+  // East Berlin buildings (behind the fence, decorative)
+  walls.push({x:-35,y:0,w:8,h:14,t:'bldg',wins:[]});
+  walls.push({x:-22,y:0,w:6,h:10,t:'bldg',wins:[]});
+  walls.push({x:-50,y:0,w:10,h:18,t:'bldg',wins:[]});
+  walls.push({x:-12,y:0,w:5,h:8,t:'bldg',wins:[]});
+  // Pre-compute window lit states
+  for(const w of walls){
+    if(w.t!=='bldg')continue;
+    const cols=Math.floor(w.w/2.5),rows=Math.floor(w.h/3);
+    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+      w.wins.push(Math.random()>0.6);
+    }
+  }
+}
+
+document.getElementById('sbtn').onclick=()=>{
+  document.getElementById('start').style.display='none';
+  document.getElementById('hud').style.display='flex';
+  state='play';hp=MHP;time=0;P.x=-15;P.y=0;P.vx=0;P.vy=0;P.onG=true;P.climbing=false;P.climbT=0;
+  build();lastT=performance.now();requestAnimationFrame(loop);
+};
+
+function loop(ts){
+  if(state!=='play')return;
+  requestAnimationFrame(loop);
+  const dt=Math.min((ts-lastT)/1000,0.05);lastT=ts;time+=dt;
+  update(dt);render();hud();
+}
+
+// ═══ UPDATE ═══
+function update(dt){
+  let mx=0;
+  if(keys['KeyD']||keys['ArrowRight'])mx=1;
+  if(keys['KeyA']||keys['ArrowLeft'])mx=-1;
+  const sprint=keys['ShiftLeft']||keys['ShiftRight'];
+  P.crouch=keys['KeyS']||keys['ArrowDown'];
+  const jump=keys['KeyW']||keys['ArrowUp']||keys['Space'];
+  const spd=sprint?9:P.crouch?2.5:5.5;
+
+  // ── FENCE CLIMBING ──
+  // If near a fence and pressing up/W, climb it
+  let nearFence=null;
+  for(const f of fences){
+    if(Math.abs(P.x-f.x)<1.2&&P.y<f.h+0.5){nearFence=f;break}
+  }
+
+  if(P.climbing){
+    // Climbing in progress — move up the fence
+    P.vx=0;P.vy=0;
+    P.climbT+=dt*1.8; // climb speed
+    P.y=Math.min(P.climbT*2.5,nearFence?nearFence.h+0.5:3.6+0.5);
+    P.x+=(nearFence&&nearFence.t==='west'?1:1)*0.3*dt; // drift over the top slightly
+    // Done climbing? (reached the top)
+    if(nearFence&&P.y>=nearFence.h+0.3){
+      P.climbing=false;
+      P.y=nearFence.h+0.5;
+      P.vy=0;
+      P.x=nearFence.x+(nearFence.t==='east'?1.5:1.5); // land on the other side
+      P.onG=false; // will fall
+    }
+    // Can cancel by pressing down
+    if(keys['KeyS']||keys['ArrowDown']){P.climbing=false;P.vy=0}
+    return updateBullets(dt);
+  }
+
+  if(nearFence&&jump&&P.y<nearFence.h-0.5&&Math.abs(P.x-nearFence.x)<0.8){
+    // Start climbing
+    P.climbing=true;P.climbT=P.y/2.5;P.vy=0;P.vx=0;
+    return updateBullets(dt);
+  }
+
+  // ── NORMAL MOVEMENT ──
+  P.vx=mx*spd;
+  if(jump&&P.onG){P.vy=9.5;P.onG=false}
+  P.vy-=24*dt;
+  let nx=P.x+P.vx*dt,ny=P.y+P.vy*dt;
+  const ph=P.crouch?0.9:P.h;
+
+  // Wall collisions (debris, sandbags, buildings)
+  for(const w of walls){
+    if(w.t==='bldg'&&nx<w.x+w.w+P.w/2)continue; // buildings don't block from left side
+    if(nx+P.w/2>w.x&&nx-P.w/2<w.x+w.w&&ny<w.y+w.h&&ny+ph>w.y){
+      if(P.y>=w.y+w.h-0.15&&P.vy<=0){ny=w.y+w.h;P.vy=0;P.onG=true}
+      else nx=P.x;
+    }
+  }
+
+  // Fence collision (can't walk through, must climb)
+  for(const f of fences){
+    if(Math.abs(nx-f.x)<0.3&&P.y<f.h){
+      nx=P.x; // blocked
+    }
+  }
+
+  // Trenches
+  let inTrench=false;
+  for(const t of trenches){
+    if(nx>t.x&&nx<t.x+t.w){inTrench=true;
+      if(ny<=-1.2){ny=-1.2;P.vy=0;P.onG=true}
+    }
+  }
+  if(!inTrench&&ny<=0){ny=0;P.vy=0;P.onG=true}
+  nx=Math.max(-55,nx); // can go back into East Berlin
+  P.x=nx;P.y=ny;
+
+  // Barbed wire
+  for(const bw of wires){
+    if(Math.abs(P.x-bw.x)<0.5){
+      const inGap=P.y>=bw.gapY&&P.y+ph<=bw.gapY+bw.gapH;
+      if(!inGap&&time-lastDmgT>0.5){dmg(10);lastDmgT=time}
+    }
+  }
+
+  // Guards — only shoot if player is past the east fence (inside the strip)
+  const inStrip=P.x>0;
+  for(const g of guards){
+    if(g.type==='ground'){g.x+=g.dir*g.spd*dt;if(Math.abs(g.x-g.bx)>g.range)g.dir*=-1}
+    if(inStrip){
+      g.cd-=dt;
+      if(g.cd<=0){fire(g);g.cd=g.fr}
+    }
+  }
+
+  updateBullets(dt);
+  if(P.x>STRIP+2)endG(true);
+  camX=P.x-W*0.28/sc();
+}
+
+function updateBullets(dt){
+  const ph=P.crouch?0.9:P.h;
+  for(let i=bullets.length-1;i>=0;i--){
+    const b=bullets[i];b.x+=b.dx*b.sp*dt;b.y+=b.dy*b.sp*dt;b.life-=dt;
+    if(b.x>P.x-P.w/2&&b.x<P.x+P.w/2&&b.y>P.y&&b.y<P.y+ph){
+      dmg(2);
+      for(let j=0;j<4;j++)particles.push({x:b.x,y:b.y,vx:(Math.random()-0.5)*4,vy:Math.random()*3,life:0.4,c:'#cc4444'});
+      bullets.splice(i,1);continue;
+    }
+    let hitWall=false;
+    for(const w of walls){if((w.t==='debris'||w.t==='sandbag')&&b.x>w.x&&b.x<w.x+w.w&&b.y>w.y&&b.y<w.y+w.h){hitWall=true;break}}
+    if(hitWall){particles.push({x:b.x,y:Math.max(0,b.y),vx:(Math.random()-0.5)*2,vy:Math.random()*2,life:0.3,c:'#8a8068'});bullets.splice(i,1);continue}
+    if(b.y<-3||b.life<=0){
+      if(b.y<0.2)particles.push({x:b.x,y:0,vx:(Math.random()-0.5)*1,vy:Math.random()*1.5,life:0.25,c:'#8a8068'});
+      bullets.splice(i,1);
+    }
+  }
+  for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy-=10*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1)}
+}
+
+function fire(g){
+  const dx=P.x-g.x,ph=P.crouch?0.9:P.h,ty=P.y+ph*0.4+Math.random()*ph*0.3;
+  const dy=ty-g.y,d=Math.sqrt(dx*dx+dy*dy);
+  const spr=0.18;
+  let bx=dx/d+(Math.random()-0.5)*spr,by=dy/d+(Math.random()-0.5)*spr;
+  const bl=Math.sqrt(bx*bx+by*by);
+  bullets.push({x:g.x+(dx>0?0.3:-0.3),y:g.y,dx:bx/bl,dy:by/bl,sp:30+Math.random()*10,life:3.5});
+  particles.push({x:g.x+(dx>0?0.4:-0.4),y:g.y+0.1,vx:dx/d*3,vy:1,life:0.06,c:'#ffaa33'});
+}
+
+function dmg(n){hp=Math.max(0,hp-n);document.getElementById('dmg').style.opacity='1';setTimeout(()=>document.getElementById('dmg').style.opacity='0',90);if(hp<=0)endG(false)}
+function sc(){return H*0.55/10}
+
+// ═══ RENDER ═══
+function render(){
+  X.clearRect(0,0,W,H);
+  const S=sc(),gY=H*GY_PCT;
+  const SX=x=>(x-camX)*S;
+  const SY=y=>gY-y*S;
+
+  // ── SKY ──
+  const sky=X.createLinearGradient(0,0,0,gY);
+  sky.addColorStop(0,'#0c1018');sky.addColorStop(0.35,'#161e2a');sky.addColorStop(0.7,'#222a35');sky.addColorStop(1,'#333a44');
+  X.fillStyle=sky;X.fillRect(0,0,W,gY);
+  // Moon
+  X.fillStyle='rgba(200,200,220,0.08)';X.beginPath();X.arc(W*0.8,gY*0.15,30,0,Math.PI*2);X.fill();
+  X.fillStyle='rgba(220,220,240,0.12)';X.beginPath();X.arc(W*0.8,gY*0.15,22,0,Math.PI*2);X.fill();
+  // Stars
+  for(let i=0;i<50;i++){X.fillStyle=`rgba(200,200,220,${0.15+(i*7%10)/40})`;X.fillRect((i*173.7+30)%W,(i*97.3+10)%(gY*0.4),1,1)}
+  // Clouds
+  X.globalAlpha=0.4;
+  for(let i=0;i<5;i++){const cx2=((i*350+time*(1.5+i*0.4))%(W+500))-250;X.fillStyle='#1e2530';X.beginPath();X.ellipse(cx2,35+i*35,70+i*25,12+i*5,0,0,Math.PI*2);X.fill()}
+  X.globalAlpha=1;
+
+  // Distant buildings (parallax)
+  X.fillStyle='#14181f';
+  for(let i=0;i<15;i++){const bx3=((i*110-camX*8)%1800)-200;X.fillRect(bx3,gY-(40+Math.sin(i*4.7)*50),30+Math.sin(i*3)*15,40+Math.sin(i*4.7)*50)}
+
+  // ── GROUND ──
+  // East Berlin streets (cobblestone, darker)
+  const eastEndX=SX(0);
+  if(eastEndX>0){
+    const streetGrd=X.createLinearGradient(0,gY-2,0,H);
+    streetGrd.addColorStop(0,'#4a4540');streetGrd.addColorStop(0.1,'#3a3530');streetGrd.addColorStop(1,'#2a2520');
+    X.fillStyle=streetGrd;X.fillRect(0,gY-2,eastEndX,H-gY+2);
+  }
+  // Death strip sand
+  const stripStartX=Math.max(0,eastEndX);
+  const stripEndX=SX(STRIP);
+  const grd=X.createLinearGradient(0,gY-2,0,H);
+  grd.addColorStop(0,'#8a7d65');grd.addColorStop(0.01,'#7a6d58');grd.addColorStop(0.08,'#6a5d4a');grd.addColorStop(0.3,'#5a5038');grd.addColorStop(1,'#3a3228');
+  X.fillStyle=grd;X.fillRect(stripStartX,gY-2,stripEndX-stripStartX,H-gY+2);
+  // West Berlin (slightly brighter)
+  if(stripEndX<W){
+    const westGrd=X.createLinearGradient(0,gY-2,0,H);
+    westGrd.addColorStop(0,'#5a5550');westGrd.addColorStop(0.1,'#4a4540');westGrd.addColorStop(1,'#2a2820');
+    X.fillStyle=westGrd;X.fillRect(stripEndX,gY-2,W-stripEndX,H-gY+2);
+  }
+  // Street markings in East Berlin
+  if(eastEndX>10){
+    X.fillStyle='rgba(200,200,200,0.04)';
+    const streetY=gY+3;
+    X.fillRect(0,streetY,eastEndX,2);
+  }
+
+  // ── TRENCHES ──
+  for(const t of trenches){const t1=SX(t.x),t2=SX(t.x+t.w),td=1.2*S;
+    X.fillStyle='#1e1a14';X.beginPath();X.moveTo(t1,gY);X.lineTo(t1+S*0.5,gY+td);X.lineTo(t2-S*0.5,gY+td);X.lineTo(t2,gY);X.closePath();X.fill();
+    X.strokeStyle='#5a5040';X.lineWidth=1.5;X.beginPath();X.moveTo(t1,gY);X.lineTo(t1+S*0.5,gY+td);X.stroke();
+    X.beginPath();X.moveTo(t2,gY);X.lineTo(t2-S*0.5,gY+td);X.stroke();
+  }
+
+  // ── WALLS & BUILDINGS ──
+  for(const w of walls){const x1=SX(w.x),ww=w.w*S,wh=w.h*S;
+    if(x1>W+60||x1+ww<-60)continue;
+    if(w.t==='bldg'){
+      // East Berlin apartment blocks
+      const bg=X.createLinearGradient(x1,SY(w.h),x1,SY(0));
+      bg.addColorStop(0,'#4a4238');bg.addColorStop(0.5,'#5a5248');bg.addColorStop(1,'#3a3228');
+      X.fillStyle=bg;X.fillRect(x1,SY(w.h),ww,wh);
+      X.strokeStyle='rgba(0,0,0,0.1)';X.lineWidth=1;X.strokeRect(x1,SY(w.h),ww,wh);
+      // Windows
+      const winCols=Math.floor(w.w/2.5),winRows=Math.floor(w.h/3);
+      let wi=0;
+      for(let r=0;r<winRows;r++)for(let c=0;c<winCols;c++){
+        const wx2=x1+ww*0.15+c*(ww*0.7/winCols);
+        const wy2=SY((r+1)*3);
+        const lit=w.wins&&w.wins[wi]||false;wi++;
+        X.fillStyle=lit?'rgba(255,220,130,0.2)':'rgba(20,20,30,0.5)';
+        X.fillRect(wx2,wy2,ww*0.5/winCols,2*S);
+        X.strokeStyle='rgba(0,0,0,0.1)';X.strokeRect(wx2,wy2,ww*0.5/winCols,2*S);
+      }
+      // Roof
+      X.fillStyle='#2a2420';X.fillRect(x1-2,SY(w.h)-2,ww+4,4);
+    } else if(w.t==='sandbag'){
+      for(let r=0;r<Math.ceil(w.h/0.18);r++){const off=r%2?ww*0.1:0;
+        for(let c=0;c<3;c++){const sbx=x1+off+c*ww/3,sby=SY((r+1)*0.18),sbw=ww/3-1,sbh=0.16*S;
+          X.fillStyle=r%2?'#7a6d58':'#887d68';X.fillRect(sbx,sby,sbw,sbh);
+          X.strokeStyle='rgba(0,0,0,0.06)';X.lineWidth=0.5;X.strokeRect(sbx,sby,sbw,sbh);
+        }}
+    } else if(w.t==='debris'){
+      const dg=X.createLinearGradient(x1,SY(w.h),x1,SY(0));dg.addColorStop(0,'#7a7568');dg.addColorStop(1,'#5a5548');
+      X.fillStyle=dg;X.fillRect(x1,SY(w.h),ww,wh);
+      X.strokeStyle='rgba(0,0,0,0.1)';X.lineWidth=1;X.strokeRect(x1,SY(w.h),ww,wh);
+    }
+  }
+
+  // ── FENCES (climbable) ──
+  for(const f of fences){
+    const fx=SX(f.x);if(fx<-80||fx>W+80)continue;
+    const fh=f.h*S;
+    const isW=f.t==='west';
+    // Concrete base
+    X.fillStyle='#666';X.fillRect(fx-3,SY(0.3),6,0.3*S);
+    // Main fence posts (vertical steel)
+    X.strokeStyle='#888';X.lineWidth=3;
+    X.beginPath();X.moveTo(fx,gY);X.lineTo(fx,SY(f.h));X.stroke();
+    // Chain-link mesh pattern
+    X.strokeStyle='rgba(160,160,160,0.3)';X.lineWidth=0.6;
+    for(let h=0.2;h<f.h;h+=0.3){
+      X.beginPath();X.moveTo(fx-8,SY(h));X.lineTo(fx+8,SY(h));X.stroke();
+    }
+    for(let d=-8;d<=8;d+=3){
+      X.beginPath();X.moveTo(fx+d,gY);X.lineTo(fx+d,SY(f.h));X.stroke();
+    }
+    // Diamond pattern overlay
+    X.strokeStyle='rgba(180,180,180,0.15)';X.lineWidth=0.5;
+    for(let h=0;h<f.h;h+=0.4){
+      for(let d=-8;d<=8;d+=4){
+        X.beginPath();X.moveTo(fx+d,SY(h));X.lineTo(fx+d+2,SY(h+0.2));X.lineTo(fx+d,SY(h+0.4));X.lineTo(fx+d-2,SY(h+0.2));X.closePath();X.stroke();
+      }
+    }
+    // Barbed wire coil on top
+    X.strokeStyle='#aaa';X.lineWidth=1;
+    const topY=SY(f.h);
+    for(let d=-6;d<=6;d+=1.5){
+      X.beginPath();X.arc(fx+d,topY-3,3,0,Math.PI*2);X.stroke();
+    }
+    // Barbs on top wire
+    X.strokeStyle='#ccc';X.lineWidth=0.7;
+    for(let d=-8;d<=8;d+=2){
+      X.beginPath();X.moveTo(fx+d,topY-3);X.lineTo(fx+d+1,topY-7);X.stroke();
+    }
+    // Label
+    X.fillStyle=isW?'rgba(200,160,74,0.25)':'rgba(200,200,200,0.15)';
+    X.font='9px Courier New';X.textAlign='center';
+    X.fillText(isW?'WEST FENCE':'EAST FENCE',fx,SY(f.h)-12);
+
+    // Climb prompt when player is near
+    if(Math.abs(P.x-f.x)<2&&!P.climbing&&P.y<f.h-0.5){
+      X.fillStyle='rgba(255,255,255,0.5)';X.font='bold 11px Courier New';
+      X.fillText('▲ HOLD W TO CLIMB',fx,SY(f.h)-26);
+    }
+    X.textAlign='start';
+  }
+
+  // ── CLIMBING PLAYER VISUAL ──
+  if(P.climbing){
+    // Draw player clinging to fence
+    const cfx=SX(P.x),cfy=SY(P.y);
+    X.fillStyle='rgba(255,255,255,0.3)';X.font='9px Courier New';X.textAlign='center';
+    X.fillText('CLIMBING...',cfx,cfy-P.h*S-20);
+    X.textAlign='start';
+  }
+
+  // ── BARBED WIRE ──
+  for(const bw of wires){const bx=SX(bw.x);if(bx<-60||bx>W+60)continue;
+    X.fillStyle='#777';X.fillRect(bx-2,SY(3.5),5,3.5*S);X.fillRect(bx-8,SY(3.5),21,3);
+    for(let h=0.2;h<=3.3;h+=0.2){
+      if(h>=bw.gapY&&h<=bw.gapY+bw.gapH)continue;
+      X.strokeStyle=`rgba(180,180,180,${0.4+(h*13%7)/10})`;X.lineWidth=0.8;
+      X.beginPath();for(let d=-14;d<=14;d+=2){const sag=Math.sin(d*0.4)*1.2;if(d===-14)X.moveTo(bx+d,SY(h)+sag);else X.lineTo(bx+d,SY(h)+sag)}X.stroke();
+      if(h%0.4<0.05){X.strokeStyle='rgba(200,200,200,0.5)';X.lineWidth=0.6;
+        for(let d2=-12;d2<=12;d2+=4){X.beginPath();X.moveTo(bx+d2,SY(h));X.lineTo(bx+d2+1.5,SY(h)-2.5);X.stroke();X.beginPath();X.moveTo(bx+d2,SY(h));X.lineTo(bx+d2-1.5,SY(h)+2.5);X.stroke()}}
+    }
+    // Gap
+    X.strokeStyle='rgba(100,180,100,0.12)';X.lineWidth=1;X.setLineDash([3,4]);
+    X.strokeRect(bx-14,SY(bw.gapY+bw.gapH),28,bw.gapH*S);X.setLineDash([]);
+  }
+
+  // ── TOWERS ──
+  for(const t of towers){const tx=SX(t.x);if(tx<-130||tx>W+130)continue;
+    // Legs
+    X.strokeStyle='#666';X.lineWidth=4;
+    X.beginPath();X.moveTo(tx-18,gY);X.lineTo(tx-7,SY(t.h));X.stroke();
+    X.beginPath();X.moveTo(tx+18,gY);X.lineTo(tx+7,SY(t.h));X.stroke();
+    // Braces
+    X.strokeStyle='#555';X.lineWidth=2;
+    for(let bh=2.5;bh<t.h-2;bh+=2.5){const r=bh/t.h,bw2=18-r*11;X.beginPath();X.moveTo(tx-bw2,SY(bh));X.lineTo(tx+bw2,SY(bh));X.stroke()}
+    // Platform
+    X.fillStyle='#5a5a54';X.fillRect(tx-22,SY(t.h+0.25),44,0.25*S);
+    // Cabin
+    const cg=X.createLinearGradient(tx-16,0,tx+16,0);cg.addColorStop(0,'#3a3a34');cg.addColorStop(0.5,'#525250');cg.addColorStop(1,'#3a3a34');
+    X.fillStyle=cg;X.fillRect(tx-16,SY(t.h+3),32,2.75*S);
+    X.strokeStyle='#2a2a24';X.lineWidth=1;X.strokeRect(tx-16,SY(t.h+3),32,2.75*S);
+    // Window
+    const wg2=X.createRadialGradient(tx,SY(t.h+1.8),3,tx,SY(t.h+1.8),12);
+    wg2.addColorStop(0,'rgba(230,210,130,0.4)');wg2.addColorStop(1,'rgba(180,160,80,0.1)');
+    X.fillStyle=wg2;X.fillRect(tx-11,SY(t.h+2.6),22,1.3*S);
+    X.strokeStyle='rgba(0,0,0,0.2)';X.lineWidth=0.8;X.beginPath();X.moveTo(tx,SY(t.h+2.6));X.lineTo(tx,SY(t.h+1.3));X.stroke();
+    // Roof
+    X.fillStyle='#2a2a24';X.fillRect(tx-18,SY(t.h+3.2),36,0.2*S);
+    // Searchlight
+    const sa=Math.sin(time*0.35+t.x*0.08)*0.6;
+    const sex=tx+Math.sin(sa)*90;
+    const sg=X.createLinearGradient(tx,SY(t.h),sex,gY);
+    sg.addColorStop(0,'rgba(255,240,175,0.14)');sg.addColorStop(0.6,'rgba(255,240,175,0.03)');sg.addColorStop(1,'rgba(255,240,175,0)');
+    X.fillStyle=sg;X.beginPath();X.moveTo(tx-2,SY(t.h));X.lineTo(sex-35,gY);X.lineTo(sex+35,gY);X.lineTo(tx+2,SY(t.h));X.closePath();X.fill();
+    X.fillStyle='rgba(255,240,175,0.03)';X.beginPath();X.ellipse(sex,gY,35,4,0,0,Math.PI*2);X.fill();
+  }
+
+  // ── GUARDS ──
+  for(const g of guards){const gx=SX(g.x),gy2=SY(g.y);if(gx<-70||gx>W+70)continue;
+    const fD=P.x>g.x?1:-1;
+    if(g.type==='tower')drawTowerGuard(gx,gy2,fD,S);
+    else drawGroundGuard(gx,gy2,fD,S,g);
+  }
+
+  // ── BULLETS ──
+  for(const b of bullets){const bx=SX(b.x),by=SY(b.y);if(bx<-30||bx>W+30)continue;
+    X.fillStyle='rgba(255,180,60,0.25)';X.beginPath();X.arc(bx,by,5,0,Math.PI*2);X.fill();
+    X.fillStyle='#ffe066';X.beginPath();X.arc(bx,by,1.5,0,Math.PI*2);X.fill();
+    X.strokeStyle='rgba(255,200,80,0.35)';X.lineWidth=1;X.beginPath();X.moveTo(bx,by);X.lineTo(SX(b.x-b.dx*2.5),SY(b.y-b.dy*2.5));X.stroke();
+  }
+
+  // ── PARTICLES ──
+  for(const p of particles){X.globalAlpha=Math.max(0,p.life/(p.c==='#ffaa33'?0.06:0.4));X.fillStyle=p.c;X.beginPath();X.arc(SX(p.x),SY(p.y),p.c==='#ffaa33'?4:2,0,Math.PI*2);X.fill()}
+  X.globalAlpha=1;
+
+  // ── PLAYER ──
+  drawFigure(SX(P.x),SY(P.y),S,true);
+
+  // ── PROGRESS ──
+  const pw2=W*0.45,ph2=2,px2=(W-pw2)/2,py2=H-14;
+  X.fillStyle='rgba(255,255,255,0.03)';X.fillRect(px2,py2,pw2,ph2);
+  X.fillStyle='rgba(200,160,74,0.3)';X.fillRect(px2,py2,pw2*Math.min(1,Math.max(0,(P.x+20)/(STRIP+20))),ph2);
+  X.fillStyle='#c8a04a';X.beginPath();X.arc(px2+pw2*Math.min(1,Math.max(0,(P.x+20)/(STRIP+20))),py2+1,2,0,Math.PI*2);X.fill();
+  X.fillStyle='rgba(232,224,208,0.08)';X.font='7px Courier New';X.fillText('EAST',px2,py2-3);X.textAlign='right';X.fillText('WEST',px2+pw2,py2-3);X.textAlign='start';
+}
+
+// ═══ DRAW HUMAN FIGURE ═══
+// Proper anatomical proportions, arms rotate from shoulder (forward/back), legs rotate from hip
+function drawFigure(cx,cy,S,isPlayer){
+  const moving=Math.abs(P.vx)>0.5;
+  const sprint=keys['ShiftLeft']||keys['ShiftRight'];
+  const rc=time*(sprint?11:8);
+  const fR=P.vx>=0?1:-1;
+  const crouch=P.crouch&&isPlayer;
+
+  // Proportions (in world-scale pixels)
+  const headR=S*0.17;
+  const neckH=S*0.06;
+  const torsoW=S*0.32;
+  const torsoH=S*0.48;
+  const upperArmL=S*0.28;
+  const lowerArmL=S*0.24;
+  const armThick=S*0.07;
+  const upperLegL=S*0.3;
+  const lowerLegL=S*0.28;
+  const legThick=S*0.09;
+  const footL=S*0.15;
+  const footH=S*0.05;
+  const handR2=S*0.04;
+
+  const hipY=cy;
+  const shoulderY=hipY-torsoH;
+
+  // Shadow
+  X.fillStyle='rgba(0,0,0,0.18)';X.beginPath();X.ellipse(cx,cy+3,torsoW*0.8,3,0,0,Math.PI*2);X.fill();
+
+  if(crouch){
+    // Crouched — compact, low
+    const chOff=S*0.3;
+    X.fillStyle='#4a4535';X.fillRect(cx-torsoW/2,cy-torsoH*0.5-chOff,torsoW,torsoH*0.5);
+    X.fillStyle='#383530';X.fillRect(cx-torsoW*0.35,cy-legThick*2,torsoW*0.3,legThick*2);
+    X.fillRect(cx+torsoW*0.05,cy-legThick*2,torsoW*0.3,legThick*2);
+    X.fillStyle='#151515';X.fillRect(cx-torsoW*0.4,cy-footH,footL,footH);X.fillRect(cx+torsoW*0.1,cy-footH,footL,footH);
+    X.fillStyle='#c8976a';X.beginPath();X.arc(cx+fR*torsoW*0.2,cy-torsoH*0.5-chOff-headR*0.6,headR*0.85,0,Math.PI*2);X.fill();
+    X.fillStyle='#2a1a0a';X.beginPath();X.arc(cx+fR*torsoW*0.2,cy-torsoH*0.5-chOff-headR*0.8,headR*0.85,Math.PI*1.1,Math.PI*1.9);X.fill();
+    return;
+  }
+
+  // ═══ RUNNING/STANDING FIGURE ═══
+
+  // Arm & leg swing angles (ROTATION from joint — realistic pendulum)
+  const legAngleA=moving?Math.sin(rc)*0.55:0; // front leg
+  const legAngleB=moving?Math.sin(rc+Math.PI)*0.55:0; // back leg
+  const armAngleA=moving?Math.sin(rc+Math.PI)*0.5:0; // front arm (opposite leg)
+  const armAngleB=moving?Math.sin(rc)*0.5:0; // back arm
+  // Knee bend during running (more bend at mid-stride)
+  const kneeA=moving?Math.max(0,Math.sin(rc)*0.6):0;
+  const kneeB=moving?Math.max(0,Math.sin(rc+Math.PI)*0.6):0;
+  // Slight body bob
+  const bob=moving?Math.abs(Math.sin(rc*2))*S*0.03:0;
+  // Slight torso lean when sprinting
+  const lean=sprint&&moving?fR*0.08:0;
+
+  const adjShouldY=shoulderY-bob;
+  const adjHipY=hipY-bob*0.3;
+
+  // ── BACK ARM (behind body) ──
+  X.save();
+  X.translate(cx-fR*torsoW*0.32,adjShouldY+S*0.04);
+  X.rotate(armAngleB);
+  // Upper arm
+  X.fillStyle='#444035';
+  roundRect(X,-armThick/2,0,armThick,upperArmL,2);X.fill();
+  // Elbow bend
+  X.translate(0,upperArmL);
+  X.rotate(Math.abs(armAngleB)*0.5);
+  // Lower arm
+  X.fillStyle='#3a3830';
+  roundRect(X,-armThick*0.45,0,armThick*0.9,lowerArmL,2);X.fill();
+  // Hand
+  X.fillStyle='#c0906a';X.beginPath();X.arc(0,lowerArmL,handR2,0,Math.PI*2);X.fill();
+  X.restore();
+
+  // ── BACK LEG ──
+  X.save();
+  X.translate(cx-fR*legThick*0.5,adjHipY);
+  X.rotate(legAngleB);
+  // Upper leg
+  X.fillStyle='#2e2b25';
+  roundRect(X,-legThick/2,0,legThick,upperLegL,2);X.fill();
+  // Knee joint
+  X.translate(0,upperLegL);
+  X.rotate(kneeB);
+  // Lower leg
+  X.fillStyle='#282520';
+  roundRect(X,-legThick*0.45,0,legThick*0.9,lowerLegL,2);X.fill();
+  // Foot
+  X.fillStyle='#141414';
+  X.fillRect(-legThick*0.4,lowerLegL-footH,footL,footH);
+  X.restore();
+
+  // ── TORSO ──
+  X.save();
+  X.translate(cx,adjShouldY);
+  X.rotate(lean);
+  // Main torso
+  const tg2=X.createLinearGradient(-torsoW/2,0,torsoW/2,0);
+  tg2.addColorStop(0,'#3e3b33');tg2.addColorStop(0.3,'#555045');tg2.addColorStop(0.7,'#555045');tg2.addColorStop(1,'#3e3b33');
+  X.fillStyle=tg2;
+  roundRect(X,-torsoW/2,0,torsoW,torsoH,3);X.fill();
+  // Jacket detail — center seam
+  X.strokeStyle='rgba(0,0,0,0.06)';X.lineWidth=1;
+  X.beginPath();X.moveTo(0,S*0.05);X.lineTo(0,torsoH-S*0.02);X.stroke();
+  // Collar
+  X.fillStyle='#3a3530';
+  X.beginPath();X.moveTo(-torsoW*0.3,-S*0.01);X.lineTo(0,S*0.06);X.lineTo(torsoW*0.3,-S*0.01);X.closePath();X.fill();
+  // Belt at bottom
+  X.fillStyle='#1a1810';X.fillRect(-torsoW/2-1,torsoH-S*0.035,torsoW+2,S*0.035);
+  X.fillStyle='#888844';X.fillRect(-S*0.025,torsoH-S*0.035,S*0.05,S*0.035);
+  X.restore();
+
+  // ── FRONT LEG ──
+  X.save();
+  X.translate(cx+fR*legThick*0.5,adjHipY);
+  X.rotate(legAngleA);
+  X.fillStyle='#363330';
+  roundRect(X,-legThick/2,0,legThick,upperLegL,2);X.fill();
+  X.translate(0,upperLegL);
+  X.rotate(kneeA);
+  X.fillStyle='#302d28';
+  roundRect(X,-legThick*0.45,0,legThick*0.9,lowerLegL,2);X.fill();
+  X.fillStyle='#141414';
+  X.fillRect(-legThick*0.4,lowerLegL-footH,footL,footH);
+  X.restore();
+
+  // ── FRONT ARM ──
+  X.save();
+  X.translate(cx+fR*torsoW*0.32,adjShouldY+S*0.04);
+  X.rotate(armAngleA);
+  X.fillStyle='#504a40';
+  roundRect(X,-armThick/2,0,armThick,upperArmL,2);X.fill();
+  X.translate(0,upperArmL);
+  X.rotate(Math.abs(armAngleA)*0.5);
+  X.fillStyle='#484438';
+  roundRect(X,-armThick*0.45,0,armThick*0.9,lowerArmL,2);X.fill();
+  X.fillStyle='#c8976a';X.beginPath();X.arc(0,lowerArmL,handR2,0,Math.PI*2);X.fill();
+  X.restore();
+
+  // ── NECK & HEAD ──
+  // Neck
+  X.fillStyle='#c0906a';
+  X.fillRect(cx-headR*0.25,adjShouldY-neckH,headR*0.5,neckH+2);
+  // Head
+  const hg=X.createRadialGradient(cx+fR*3,adjShouldY-neckH-headR,headR*0.3,cx,adjShouldY-neckH-headR,headR);
+  hg.addColorStop(0,'#d8aa7e');hg.addColorStop(1,'#b8906a');
+  X.fillStyle=hg;
+  X.beginPath();X.arc(cx,adjShouldY-neckH-headR,headR,0,Math.PI*2);X.fill();
+  // Hair
+  X.fillStyle='#221508';
+  X.beginPath();X.arc(cx-fR*1,adjShouldY-neckH-headR*1.15,headR*1.05,Math.PI*1.1,Math.PI*1.9);X.fill();
+  // Ear
+  X.fillStyle='#c4906a';
+  X.beginPath();X.arc(cx-fR*headR*0.92,adjShouldY-neckH-headR,headR*0.15,0,Math.PI*2);X.fill();
+  // Eye
+  X.fillStyle='#1a1a1a';
+  X.beginPath();X.arc(cx+fR*headR*0.35,adjShouldY-neckH-headR*1.05,1.8,0,Math.PI*2);X.fill();
+  // Eyebrow
+  X.strokeStyle='#2a1a0a';X.lineWidth=1.5;
+  X.beginPath();X.moveTo(cx+fR*headR*0.15,adjShouldY-neckH-headR*1.3);X.lineTo(cx+fR*headR*0.55,adjShouldY-neckH-headR*1.25);X.stroke();
+  // Mouth
+  X.strokeStyle='#9a7058';X.lineWidth=1;
+  X.beginPath();X.moveTo(cx+fR*headR*0.1,adjShouldY-neckH-headR*0.65);X.lineTo(cx+fR*headR*0.35,adjShouldY-neckH-headR*0.68);X.stroke();
+}
+
+// ═══ GROUND GUARD ═══
+function drawGroundGuard(gx,gy,fD,S,g){
+  const headR=S*0.14,torsoW=S*0.3,torsoH=S*0.44;
+  const armThick=S*0.07,upperArmL=S*0.26,lowerArmL=S*0.22;
+  const legThick=S*0.09,upperLegL=S*0.28,lowerLegL=S*0.26;
+  const shoulderY=gy-upperLegL-torsoH;
+  const hipY2=gy-upperLegL;
+  const lS=Math.sin(time*5)*0.12;
+
+  X.fillStyle='rgba(0,0,0,0.12)';X.beginPath();X.ellipse(gx,gy+2,torsoW*0.7,2.5,0,0,Math.PI*2);X.fill();
+
+  // Back leg
+  X.save();X.translate(gx-fD*legThick*0.4,hipY2);X.rotate(-lS);
+  X.fillStyle='#283820';roundRect(X,-legThick/2,0,legThick,upperLegL+lowerLegL,2);X.fill();
+  X.fillStyle='#111';X.fillRect(-legThick/2,upperLegL+lowerLegL-S*0.05,S*0.13,S*0.05);X.restore();
+
+  // Torso
+  const ug=X.createLinearGradient(gx-torsoW/2,shoulderY,gx+torsoW/2,shoulderY);
+  ug.addColorStop(0,'#243218');ug.addColorStop(0.5,'#344828');ug.addColorStop(1,'#243218');
+  X.fillStyle=ug;roundRect(X,gx-torsoW/2,shoulderY,torsoW,torsoH,2);X.fill();
+  // Belt
+  X.fillStyle='#161610';X.fillRect(gx-torsoW/2-1,hipY2-S*0.03,torsoW+2,S*0.03);
+
+  // Front leg
+  X.save();X.translate(gx+fD*legThick*0.4,hipY2);X.rotate(lS);
+  X.fillStyle='#2e3e22';roundRect(X,-legThick/2,0,legThick,upperLegL+lowerLegL,2);X.fill();
+  X.fillStyle='#111';X.fillRect(-legThick/2,upperLegL+lowerLegL-S*0.05,S*0.13,S*0.05);X.restore();
+
+  // Gun arm — aims at player
+  const ga=Math.atan2((P.y+P.h*0.4-g.y),(P.x-g.x));
+  X.save();X.translate(gx+fD*torsoW*0.35,shoulderY+S*0.05);
+  X.rotate(-ga+(fD>0?0:Math.PI));
+  X.fillStyle='#2a3a20';roundRect(X,-armThick/2,0,armThick,upperArmL+lowerArmL*0.6,2);X.fill();
+  // Gun
+  X.fillStyle='#1a1a1a';X.fillRect(-2,upperArmL*0.5,S*0.5,2.5);
+  X.fillStyle='#3a2a18';X.fillRect(S*0.3,upperArmL*0.5-1,S*0.13,4.5);
+  X.restore();
+
+  // Other arm
+  X.fillStyle='#2a3a20';X.fillRect(gx-fD*torsoW*0.35-armThick/2,shoulderY+S*0.04,armThick,upperArmL*0.6);
+
+  // Neck + head
+  X.fillStyle='#c4956a';X.fillRect(gx-headR*0.2,shoulderY-S*0.05,headR*0.4,S*0.06);
+  X.fillStyle='#c4956a';X.beginPath();X.arc(gx,shoulderY-S*0.05-headR,headR,0,Math.PI*2);X.fill();
+  // Helmet NVA M56
+  X.fillStyle='#283820';
+  X.beginPath();X.arc(gx,shoulderY-S*0.05-headR*1.12,headR*1.1,Math.PI*1.05,Math.PI*1.95);X.fill();
+  X.fillRect(gx-headR*1.12,shoulderY-S*0.05-headR*1.12,headR*2.24,headR*0.22);
+  // Eye
+  X.fillStyle='#111';X.beginPath();X.arc(gx+fD*headR*0.3,shoulderY-S*0.05-headR*1.05,1.2,0,Math.PI*2);X.fill();
+  // Alert
+  X.fillStyle='rgba(255,30,15,0.55)';X.font='bold 10px sans-serif';X.textAlign='center';
+  X.fillText('!',gx,shoulderY-S*0.05-headR*2.5);X.textAlign='start';
+}
+
+// ═══ TOWER GUARD (upper body) ═══
+function drawTowerGuard(gx,gy,fD,S){
+  const headR=S*0.12,torsoW=S*0.26,torsoH=S*0.24;
+  X.fillStyle='#344828';X.fillRect(gx-torsoW/2,gy-torsoH,torsoW,torsoH);
+  // Gun
+  const ga=Math.atan2(P.y+P.h*0.4,P.x-gx/S);
+  X.strokeStyle='#1a1a1a';X.lineWidth=2.5;
+  X.beginPath();X.moveTo(gx+fD*torsoW*0.4,gy-torsoH*0.5);
+  X.lineTo(gx+fD*torsoW*0.4+fD*S*0.45,gy-torsoH*0.5-Math.sin(ga)*S*0.3);X.stroke();
+  X.fillStyle='#c4956a';X.beginPath();X.arc(gx,gy-torsoH-headR*0.8,headR,0,Math.PI*2);X.fill();
+  X.fillStyle='#283820';X.beginPath();X.arc(gx,gy-torsoH-headR,headR*1.08,Math.PI*1.05,Math.PI*1.95);X.fill();
+  X.fillRect(gx-headR*1.08,gy-torsoH-headR,headR*2.16,headR*0.2);
+}
+
+// Rounded rect helper
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function hud(){
+  const pct=(hp/MHP)*100;const bar=document.getElementById('hbar');
+  bar.style.width=pct+'%';bar.className='hbi'+(pct<25?' low':'');
+  const m=Math.floor(time/60),s=Math.floor(time%60);
+  document.getElementById('tmr').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  document.getElementById('dst').textContent=Math.max(0,Math.floor(STRIP+2-P.x))+'m to freedom';
+}
+
+function endG(won){
+  state=won?'won':'dead';const el=document.getElementById('end');
+  el.className='show '+(won?'win':'lose');
+  document.getElementById('et').textContent=won?'FREEDOM':'KILLED IN ACTION';
+  const m=Math.floor(time/60),s=Math.floor(time%60);
+  const ts=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  document.getElementById('es').innerHTML=won?
+    `Time: <strong>${ts}</strong> · Health: <strong>${hp}/${MHP}</strong><br><br>You crossed the death strip. You are free.`:
+    `Survived: <strong>${ts}</strong> · Distance: <strong>${Math.floor(P.x)}m / ${STRIP}m</strong><br><br>Between 1961 and 1989, at least 140 people<br>died attempting to cross the Berlin Wall.`;
+  document.getElementById('hud').style.display='none';
+}
+</script>
+</body>
+</html>
