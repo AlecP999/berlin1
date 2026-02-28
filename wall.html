@@ -66,7 +66,7 @@ const STRIP=160, GY_PCT=0.7;
 let state='menu',hp=250,MHP=250,time=0,keys={},camX=0,lastDmgT=0,lastT=0;
 
 const P={x:-15,y:0,vx:0,vy:0,w:0.7,h:1.8,onG:true,crouch:false,climbing:false,climbT:0};
-let walls=[],wires=[],trenches=[],guards=[],towers=[],bullets=[],particles=[],fences=[];
+let walls=[],wires=[],trenches=[],guards=[],towers=[],bullets=[],particles=[],fences=[],newspaper=null;
 
 addEventListener('keydown',e=>{keys[e.code]=true;e.preventDefault()});
 addEventListener('keyup',e=>{keys[e.code]=false});
